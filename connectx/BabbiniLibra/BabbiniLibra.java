@@ -79,13 +79,12 @@ public class BabbiniLibra implements CXPlayer {
       int score;
       CXGameState result = B.markColumn(i);
       if (result == myWin) {
-          return i;
-        }
-        else if (result == CXGameState.DRAW) {
-          score= 0;
-        }else{
-          score= minmax(B, B.getAvailableColumns(), false);
-        }
+        return i;
+      } else if (result == CXGameState.DRAW) {
+        score = 0;
+      } else {
+        score = minmax(B, B.getAvailableColumns(), false);
+      }
       if (bestScore < score) {
         bestScore = score;
         move = i;
@@ -109,20 +108,17 @@ public class BabbiniLibra implements CXPlayer {
    */
   private int minmax(CXBoard B, Integer[] L, boolean maximizer) {
     if (maximizer) {
-      int maxScore = -1;
+      int maxScore = -1000;
       for (int i : L) {
         int score;
         CXGameState result = B.markColumn(i);
         if (result == myWin) {
-          score= 1;
-        }
-        else if (result == yourWin) {
-          score= -1;
-        }
-        else if (result == CXGameState.DRAW) {
-          score= 0;
-        }
-        else{
+          score = 1;
+        } else if (result == yourWin) {
+          score = -1;
+        } else if (result == CXGameState.DRAW) {
+          score = 0;
+        } else {
           score = this.minmax(B, B.getAvailableColumns(), false);
         }
         maxScore = Math.max(maxScore, score);
@@ -136,15 +132,12 @@ public class BabbiniLibra implements CXPlayer {
         int score;
         CXGameState result = B.markColumn(i);
         if (result == myWin) {
-          score= 1;
-        }
-        else if (result == yourWin) {
-          score= -1;
-        }
-        else if (result == CXGameState.DRAW) {
-          score= 0;
-        }
-        else{
+          score = 1;
+        } else if (result == yourWin) {
+          score = -1;
+        } else if (result == CXGameState.DRAW) {
+          score = 0;
+        } else {
           score = this.minmax(B, B.getAvailableColumns(), true);
         }
         minScore = Math.min(minScore, score);
