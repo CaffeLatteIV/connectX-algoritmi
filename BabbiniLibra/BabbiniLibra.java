@@ -68,27 +68,28 @@ public class BabbiniLibra implements CXPlayer {
     int save = L[rand.nextInt(L.length)]; // Save a random column
 
     // try {
-      // int col = singleMoveWin(B, L);
-      // if (col != -1)
-      //   return col;
-      // else
-      //   return singleMoveBlock(B, L);
-      int max = -1;
-      int move = L[0];
-      for (int i : L) {
-        B.markColumn(i);
-        int mm = minmax(B, B.getAvailableColumns(), false);
-        if (max < mm ) {
-          max = mm;
-          move = i;
-        }
-        if(max ==1) return i;
-        B.unmarkColumn();
+    // int col = singleMoveWin(B, L);
+    // if (col != -1)
+    // return col;
+    // else
+    // return singleMoveBlock(B, L);
+    int max = -1;
+    int move = L[0];
+    for (int i : L) {
+      B.markColumn(i);
+      int mm = minmax(B, B.getAvailableColumns(), false);
+      if (max < mm) {
+        max = mm;
+        move = i;
       }
-      return move;
+      if (max == 1)
+        return i;
+      B.unmarkColumn();
+    }
+    return move;
     // } catch (TimeoutException e) {
-    //   System.err.println("Timeout!!! Random column selected");
-    //   return save;
+    // System.err.println("Timeout!!! Random column selected");
+    // return save;
     // }
   }
 
@@ -160,8 +161,8 @@ public class BabbiniLibra implements CXPlayer {
    * @param L lista colonne
    * @return best move
    */
-  public int minmax(CXBoard B, Integer[] L, boolean maximiser) {
-    if (maximiser) {
+  public int minmax(CXBoard B, Integer[] L, boolean maximizer) {
+    if (maximizer) {
       int maxRes = -1;
       for (int i : L) {
         CXGameState result = B.markColumn(i);
@@ -174,7 +175,7 @@ public class BabbiniLibra implements CXPlayer {
         if (result == CXGameState.DRAW) {
           return 0;
         }
-        maxRes = Math.max(maxRes, this.minmax(B, L, false));
+        maxRes = Math.max(maxRes, this.minmax(B, B.getAvailableColumns(), false));
         B.unmarkColumn();
       }
       return maxRes;
@@ -192,7 +193,7 @@ public class BabbiniLibra implements CXPlayer {
         if (result == CXGameState.DRAW) {
           return 0;
         }
-        minRes = Math.min(minRes, this.minmax(B, L, false));
+        minRes = Math.min(minRes, this.minmax(B, B.getAvailableColumns(), true));
         B.unmarkColumn();
       }
       return minRes;
