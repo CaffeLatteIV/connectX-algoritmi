@@ -73,16 +73,24 @@ public class BabbiniLibra implements CXPlayer {
     // return col;
     // else
     // return singleMoveBlock(B, L);
-    int max = -1;
+    int bestScore = -1;
     int move = L[0];
     for (int i : L) {
-      B.markColumn(i);
-      int mm = minmax(B, B.getAvailableColumns(), false);
-      if (max < mm) {
-        max = mm;
+      int score;
+      CXGameState result = B.markColumn(i);
+      if (result == myWin) {
+          return i;
+        }
+        else if (result == CXGameState.DRAW) {
+          score= 0;
+        }else{
+          score= minmax(B, B.getAvailableColumns(), false);
+        }
+      if (bestScore < score) {
+        bestScore = score;
         move = i;
       }
-      if (max == 1)
+      if (bestScore == 1)
         return i;
       B.unmarkColumn();
     }
