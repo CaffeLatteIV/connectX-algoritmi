@@ -73,7 +73,7 @@ public class BabbiniLibra implements CXPlayer {
     // return col;
     // else
     // return singleMoveBlock(B, L);
-    int bestScore = -1;
+    int bestScore = -1000;
     int move = L[0];
     for (int i : L) {
       int score;
