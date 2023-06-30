@@ -6,11 +6,11 @@
   "configurations": [
     {
       "type": "java",
-      "name": "CXGame",
+      "name": "BabbiniLibra",
       "request": "launch",
       "mainClass": "connectx.CXGame",
       "projectName": "",
-      "args": "4 4 3 connectx.L0.L0"
+      "args": "4 4 3 connectx.BabbiniLibra.BabbiniLibra"
     },
   ]
 }

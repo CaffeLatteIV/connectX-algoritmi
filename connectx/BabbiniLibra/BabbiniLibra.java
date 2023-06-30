@@ -93,110 +93,56 @@ public class BabbiniLibra implements CXPlayer {
     // }
   }
 
-  private void checktime() throws TimeoutException {
-    if ((System.currentTimeMillis() - START) / 1000.0 >= TIMEOUT * (99.0 / 100.0))
-      throw new TimeoutException();
-  }
-
-  /**
-   * Check if we can win in a single move
-   *
-   * Returns the winning column if there is one, otherwise -1
-   */
-  private int singleMoveWin(CXBoard B, Integer[] L) throws TimeoutException {
-    for (int i : L) {
-      checktime(); // Check timeout at every iteration
-      CXGameState state = B.markColumn(i);
-      if (state == myWin)
-        return i; // Winning column found: return immediately
-      B.unmarkColumn();
-    }
-    return -1;
-  }
-
-  /**
-   * Check if we can block adversary's victory
-   *
-   * Returns a blocking column if there is one, otherwise a random one
-   * L = colonne disponibili
-   */
-  private int singleMoveBlock(CXBoard B, Integer[] L) throws TimeoutException {
-    TreeSet<Integer> T = new TreeSet<Integer>(); // We collect here safe column indexes
-
-    for (int i : L) {
-      checktime();
-      T.add(i); // We consider column i as a possible move
-      B.markColumn(i);
-
-      int j;
-      boolean stop;
-
-      for (j = 0, stop = false; j < L.length && !stop; j++) {
-        // try {Thread.sleep((int)(0.2*1000*TIMEOUT));} catch (Exception e) {} //
-        // Uncomment to test timeout
-        checktime();
-        if (!B.fullColumn(L[j])) {
-          CXGameState state = B.markColumn(L[j]);
-          if (state == yourWin) {
-            T.remove(i); // We ignore the i-th column as a possible move
-            stop = true; // We don't need to check more
-          }
-          B.unmarkColumn(); //
-        }
-      }
-      B.unmarkColumn();
-    }
-
-    if (T.size() > 0) {
-      Integer[] X = T.toArray(new Integer[T.size()]);
-      return X[rand.nextInt(X.length)];
-    } else {
-      return L[rand.nextInt(L.length)];
-    }
-  }
-
   /**
    * 
    * @param B board
    * @param L lista colonne
    * @return best move
    */
-  public int minmax(CXBoard B, Integer[] L, boolean maximizer) {
+  private int minmax(CXBoard B, Integer[] L, boolean maximizer) {
     if (maximizer) {
-      int maxRes = -1;
+      int maxScore = -1;
       for (int i : L) {
+        int score;
         CXGameState result = B.markColumn(i);
         if (result == myWin) {
-          return 1;
+          score= 1;
         }
-        if (result == yourWin) {
-          return 0;
+        else if (result == yourWin) {
+          score= -1;
         }
-        if (result == CXGameState.DRAW) {
-          return 0;
+        else if (result == CXGameState.DRAW) {
+          score= 0;
         }
-        maxRes = Math.max(maxRes, this.minmax(B, B.getAvailableColumns(), false));
+        else{
+          score = this.minmax(B, B.getAvailableColumns(), false);
+        }
+        maxScore = Math.max(maxScore, score);
         B.unmarkColumn();
       }
-      return maxRes;
+      return maxScore;
     } else {
       // minimizer
-      int minRes = 1;
+      int minScore = 1000;
       for (int i : L) {
+        int score;
         CXGameState result = B.markColumn(i);
         if (result == myWin) {
-          return 1;
+          score= 1;
         }
-        if (result == yourWin) {
-          return -1;
+        else if (result == yourWin) {
+          score= -1;
         }
-        if (result == CXGameState.DRAW) {
-          return 0;
+        else if (result == CXGameState.DRAW) {
+          score= 0;
         }
-        minRes = Math.min(minRes, this.minmax(B, B.getAvailableColumns(), true));
+        else{
+          score = this.minmax(B, B.getAvailableColumns(), true);
+        }
+        minScore = Math.min(minScore, score);
         B.unmarkColumn();
       }
-      return minRes;
+      return minScore;
     }
   }
 
