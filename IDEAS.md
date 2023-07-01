@@ -1,0 +1,2 @@
+- Transposition board 
+- seguire https://blog.gamesolver.org/
