@@ -62,42 +62,42 @@ public class BabbiniLibra implements CXPlayer {
    * </p>
    */
   public int selectColumn(CXBoard B) {
+    Integer[] L = B.getAvailableColumns();
+    int bestScore = -1000;
+    int alpha = -1000;
+    int beta = 1000;
+    int move = L[0];
     START = System.currentTimeMillis(); // Save starting time
 
-    Integer[] L = B.getAvailableColumns();
-    int save = L[rand.nextInt(L.length)]; // Save a random column
-
-    // try {
-    // int col = singleMoveWin(B, L);
-    // if (col != -1)
-    // return col;
-    // else
-    // return singleMoveBlock(B, L);
-    int bestScore = -1000;
-    int move = L[0];
     for (int i : L) {
       int score;
       CXGameState result = B.markColumn(i);
       if (result == myWin) {
-        return i;
+        score = 1;
       } else if (result == CXGameState.DRAW) {
         score = 0;
       } else {
-        score = minmax(B, B.getAvailableColumns(), false);
+        score = abprouning(B, B.getAvailableColumns(), false, alpha, beta);
+        // score = minmax(B, B.getAvailableColumns(), false);
       }
+      // System.out.println("move " + i + " score " + score);
       if (bestScore < score) {
         bestScore = score;
         move = i;
+        // System.out.println("New best score: " + bestScore + " \nbest move " + move);
       }
-      if (bestScore == 1)
-        return i;
+      if (bestScore == 1) {
+        long end = System.currentTimeMillis() - START;
+        System.out.println("ho scelto la mossa" + move + "\ntime: " + end);
+        return move;
+      }
+      System.out.println("");
       B.unmarkColumn();
     }
+    long end = System.currentTimeMillis() - START;
+    System.out.println("ho scelto la mossa" + move + "\ntime: " + end);
+    B.markColumn(move);
     return move;
-    // } catch (TimeoutException e) {
-    // System.err.println("Timeout!!! Random column selected");
-    // return save;
-    // }
   }
 
   /**
@@ -141,6 +141,57 @@ public class BabbiniLibra implements CXPlayer {
           score = this.minmax(B, B.getAvailableColumns(), true);
         }
         minScore = Math.min(minScore, score);
+        B.unmarkColumn();
+      }
+      return minScore;
+    }
+  }
+
+  private int abprouning(CXBoard B, Integer[] L, boolean maximizer, int alpha, int beta) {
+    if (maximizer) {
+      int maxScore = -1000;
+      for (int i : L) {
+        int score;
+        CXGameState result = B.markColumn(i);
+        if (result == myWin) {
+          score = 1;
+        } else if (result == yourWin) {
+          score = -1;
+        } else if (result == CXGameState.DRAW) {
+          score = 0;
+        } else {
+          score = this.abprouning(B, B.getAvailableColumns(), false, alpha, beta);
+        }
+        if (score > beta) {
+          B.unmarkColumn();
+          break;
+        }
+        maxScore = Math.max(maxScore, score);
+        alpha = Math.max(alpha, score);
+        B.unmarkColumn();
+      }
+      return maxScore;
+    } else {
+      // minimizer
+      int minScore = 1000;
+      for (int i : L) {
+        int score;
+        CXGameState result = B.markColumn(i);
+        if (result == myWin) {
+          score = 1;
+        } else if (result == yourWin) {
+          score = -1;
+        } else if (result == CXGameState.DRAW) {
+          score = 0;
+        } else {
+          score = this.minmax(B, B.getAvailableColumns(), true);
+        }
+        if (score < alpha) {
+          B.unmarkColumn();
+          break;
+        }
+        minScore = Math.min(minScore, score);
+        beta = Math.min(score, beta);
         B.unmarkColumn();
       }
       return minScore;

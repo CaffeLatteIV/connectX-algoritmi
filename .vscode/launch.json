@@ -10,7 +10,7 @@
       "request": "launch",
       "mainClass": "connectx.CXGame",
       "projectName": "",
-      "args": "4 4 3 connectx.BabbiniLibra.BabbiniLibra"
+      "args": "4 5 3 connectx.BabbiniLibra.BabbiniLibra"
     },
   ]
 }
