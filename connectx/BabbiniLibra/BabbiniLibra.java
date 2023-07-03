@@ -24,6 +24,10 @@ import connectx.CXGameState;
 import connectx.CXCell;
 import java.util.TreeSet;
 import java.util.Random;
+import java.beans.beancontext.BeanContext;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.sql.Time;
 import java.util.Arrays;
 import java.util.concurrent.TimeoutException;
 
@@ -40,6 +44,11 @@ public class BabbiniLibra implements CXPlayer {
   private CXGameState yourWin;
   private int TIMEOUT;
   private long START;
+  private long TOTALTIME;
+  private int TOTALMOVES;
+  private int [] columnOrder;
+  private int BESTMOVETMP;
+  
 
   /* Default empty constructor */
   public BabbiniLibra() {
@@ -51,6 +60,18 @@ public class BabbiniLibra implements CXPlayer {
     myWin = first ? CXGameState.WINP1 : CXGameState.WINP2;
     yourWin = first ? CXGameState.WINP2 : CXGameState.WINP1;
     TIMEOUT = timeout_in_secs;
+    TOTALMOVES=0;
+    TOTALTIME=0;
+    columnOrder = new int [N];
+    for (int i = 0; i < N; i++) {
+      columnOrder[i] = N/2 + (1-2*(i%2))*(i+1)/2; //inizializza l'ordine delle colonne partendo dal centro (euristica sulle migliori mosse)
+    }
+  }
+
+  private void checkTime() throws TimeoutException {
+    if (((System.currentTimeMillis() - START) / 1000) >= TIMEOUT * (99.0 / 100.0)) {
+      throw new TimeoutException();
+    }
   }
 
   /**
@@ -63,96 +84,73 @@ public class BabbiniLibra implements CXPlayer {
    */
   public int selectColumn(CXBoard B) {
     Integer[] L = B.getAvailableColumns();
-    int bestScore = -1000;
+   
+    START = System.currentTimeMillis(); // Save starting time
+    BESTMOVETMP = getNextColumn(B, 0);
+
+    try {
+      int move = chooseMove(B,L);
+      TOTALMOVES++;
+      TOTALTIME += System.currentTimeMillis() - START;
+      System.err.println("");
+      System.err.println("Total Time: " + TOTALTIME);
+      System.err.println("Total Moves: " + TOTALMOVES);
+      System.err.println("Avg time per move: " + (TOTALTIME/TOTALMOVES));
+      B.markColumn(move);
+      return move;
+    } catch (TimeoutException e) {
+      TOTALMOVES++;
+      TOTALTIME += System.currentTimeMillis() - START;
+      System.err.println("timeout!!");
+      return BESTMOVETMP;
+    }
+
+  }
+private Integer chooseMove(CXBoard B, Integer[]L) throws TimeoutException{
+   int bestScore = -1000;
     int alpha = -1000;
     int beta = 1000;
     int move = L[0];
-    START = System.currentTimeMillis(); // Save starting time
-
-    for (int i : L) {
-      int score;
-      CXGameState result = B.markColumn(i);
-      if (result == myWin) {
-        score = 1;
-      } else if (result == CXGameState.DRAW) {
-        score = 0;
-      } else {
-        score = abprouning(B, B.getAvailableColumns(), false, alpha, beta);
-        // score = minmax(B, B.getAvailableColumns(), false);
-      }
-      // System.out.println("move " + i + " score " + score);
-      if (bestScore < score) {
-        bestScore = score;
-        move = i;
-        // System.out.println("New best score: " + bestScore + " \nbest move " + move);
-      }
-      if (bestScore == 1) {
-        long end = System.currentTimeMillis() - START;
-        System.out.println("ho scelto la mossa" + move + "\ntime: " + end);
-        return move;
-      }
-      System.out.println("");
-      B.unmarkColumn();
-    }
-    long end = System.currentTimeMillis() - START;
-    System.out.println("ho scelto la mossa" + move + "\ntime: " + end);
-    B.markColumn(move);
-    return move;
-  }
-
-  /**
-   * 
-   * @param B board
-   * @param L lista colonne
-   * @return best move
-   */
-  private int minmax(CXBoard B, Integer[] L, boolean maximizer) {
-    if (maximizer) {
-      int maxScore = -1000;
-      for (int i : L) {
+  for (int i : L) {
+        checkTime();
         int score;
-        CXGameState result = B.markColumn(i);
+        int col = getNextColumn(B, i);
+        CXGameState result = B.markColumn(col);
         if (result == myWin) {
           score = 1;
-        } else if (result == yourWin) {
-          score = -1;
         } else if (result == CXGameState.DRAW) {
           score = 0;
         } else {
-          score = this.minmax(B, B.getAvailableColumns(), false);
+          score = abprouning(B, B.getAvailableColumns(), false, alpha, beta);
         }
-        maxScore = Math.max(maxScore, score);
+        if (bestScore < score) {
+          bestScore = score;
+          move = col;
+          BESTMOVETMP = col;
+        }
+        if (bestScore == 1) {
+          B.unmarkColumn();
+          return move;
+        }
         B.unmarkColumn();
       }
-      return maxScore;
-    } else {
-      // minimizer
-      int minScore = 1000;
-      for (int i : L) {
-        int score;
-        CXGameState result = B.markColumn(i);
-        if (result == myWin) {
-          score = 1;
-        } else if (result == yourWin) {
-          score = -1;
-        } else if (result == CXGameState.DRAW) {
-          score = 0;
-        } else {
-          score = this.minmax(B, B.getAvailableColumns(), true);
-        }
-        minScore = Math.min(minScore, score);
-        B.unmarkColumn();
-      }
-      return minScore;
+      return move;
+}
+  private int getNextColumn(CXBoard B, Integer i) {
+    while (B.fullColumn(columnOrder[i])) {
+      i= (i+1) % B.M;
     }
+    return columnOrder[i];
   }
-
-  private int abprouning(CXBoard B, Integer[] L, boolean maximizer, int alpha, int beta) {
+  
+  private int abprouning(CXBoard B, Integer[] L, boolean maximizer, int alpha, int beta) throws TimeoutException {
     if (maximizer) {
       int maxScore = -1000;
       for (int i : L) {
+        checkTime();
         int score;
-        CXGameState result = B.markColumn(i);
+        int col = getNextColumn(B, i);
+        CXGameState result = B.markColumn(col);
         if (result == myWin) {
           score = 1;
         } else if (result == yourWin) {
@@ -175,8 +173,10 @@ public class BabbiniLibra implements CXPlayer {
       // minimizer
       int minScore = 1000;
       for (int i : L) {
+        checkTime();
         int score;
-        CXGameState result = B.markColumn(i);
+        int col = getNextColumn(B, i);
+        CXGameState result = B.markColumn(col);
         if (result == myWin) {
           score = 1;
         } else if (result == yourWin) {
@@ -184,7 +184,7 @@ public class BabbiniLibra implements CXPlayer {
         } else if (result == CXGameState.DRAW) {
           score = 0;
         } else {
-          score = this.minmax(B, B.getAvailableColumns(), true);
+          score = this.abprouning(B, B.getAvailableColumns(), true, alpha, beta);
         }
         if (score < alpha) {
           B.unmarkColumn();
