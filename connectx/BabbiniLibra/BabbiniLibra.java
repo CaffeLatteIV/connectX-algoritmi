@@ -92,10 +92,6 @@ public class BabbiniLibra implements CXPlayer {
       int move = chooseMove(B,L);
       TOTALMOVES++;
       TOTALTIME += System.currentTimeMillis() - START;
-      System.err.println("");
-      System.err.println("Total Time: " + TOTALTIME);
-      System.err.println("Total Moves: " + TOTALMOVES);
-      System.err.println("Avg time per move: " + (TOTALTIME/TOTALMOVES));
       B.markColumn(move);
       return move;
     } catch (TimeoutException e) {
