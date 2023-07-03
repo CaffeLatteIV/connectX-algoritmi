@@ -69,7 +69,7 @@ public class BabbiniLibra implements CXPlayer {
   }
 
   private void checkTime() throws TimeoutException {
-    if (((System.currentTimeMillis() - START) / 1000) >= TIMEOUT * (99.0 / 100.0)) {
+    if (((System.currentTimeMillis() - START) / 1000) >= TIMEOUT * (98.5 / 100.0)) {
       throw new TimeoutException();
     }
   }
@@ -84,7 +84,7 @@ public class BabbiniLibra implements CXPlayer {
    */
   public int selectColumn(CXBoard B) {
     Integer[] L = B.getAvailableColumns();
-   
+  
     START = System.currentTimeMillis(); // Save starting time
     BESTMOVETMP = getNextColumn(B, 0);
 
