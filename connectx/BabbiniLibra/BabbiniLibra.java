@@ -29,6 +29,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.sql.Time;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.concurrent.TimeoutException;
@@ -86,15 +87,12 @@ public class BabbiniLibra implements CXPlayer {
    * </p>
    */
   public int selectColumn(CXBoard B) {
-    Integer[] L = B.getAvailableColumns();
-
     START = System.currentTimeMillis(); // Save starting time
+    Integer[] L = sortl(B, B.getAvailableColumns());
     BESTMOVETMP = L[0];
 
     try {
       int move = chooseMove(B, L);
-      TOTALMOVES++;
-      TOTALTIME += System.currentTimeMillis() - START;
       B.markColumn(move);
       return move;
     } catch (TimeoutException e) {
@@ -105,6 +103,7 @@ public class BabbiniLibra implements CXPlayer {
     }
 
   }
+
   private Integer chooseMove(CXBoard B, Integer[] L) throws TimeoutException {
     int bestScore = -1_000_000; // one million
     int alpha = -1_000_000;
@@ -136,8 +135,20 @@ public class BabbiniLibra implements CXPlayer {
     return move;
   }
 
+  private Integer[] sortl(CXBoard B, Integer[] L) {
+    Arrays.sort(L, new Comparator<Integer>() {
+      @Override
+      public int compare(Integer a, Integer b) {
+        int m = ((int) Math.floor(B.N / 2));
+        return Math.abs(m-a)- Math.abs(m-b);
+      }
+    });
+    return L;
+  }
+
   private int abprouning(CXBoard B, Integer[] L, boolean maximizer, int alpha, int beta) throws TimeoutException {
     checkTime();
+    L = sortl(B, L);
     if (maximizer) {
       int maxScore = -1000000;
       int hash = B.getBoard().hashCode();
@@ -157,15 +168,15 @@ public class BabbiniLibra implements CXPlayer {
           score = 0;
         } else { // OPEN Board
           int cellWeight = (B.M + B.N) - (i + (1 - (i % 2))); // M+N valore di partenza, valore della cella
-                                                                  // direttamente proporzionale alla priorità della
-                                                                  // colonna. Non funziona se seguiamo ordine delle
-                                                                  // colonne standard.
-          score =  this.abprouning(B, B.getAvailableColumns(), false, alpha, beta);
+                                                              // direttamente proporzionale alla priorità della
+                                                              // colonna. Non funziona se seguiamo ordine delle
+                                                              // colonne standard.
+          score = this.abprouning(B, B.getAvailableColumns(), false, alpha, beta);
         }
         maxScore = Math.max(maxScore, score);
         alpha = Math.max(alpha, maxScore);
         B.unmarkColumn();
-        if (beta<=alpha) {
+        if (beta <= alpha) {
           break;
         }
       }
@@ -186,11 +197,11 @@ public class BabbiniLibra implements CXPlayer {
           score = 0;
         } else {
           int cellWeight = (B.M + B.N) - (i + (1 - (i % 2))); // M+N valore di partenza, valore della cella
-                                                                  // direttamente proporzionale alla priorità della
-                                                                  // colonna. Non funziona se seguiamo ordine delle
-                                                                  // colonne standard.
+                                                              // direttamente proporzionale alla priorità della
+                                                              // colonna. Non funziona se seguiamo ordine delle
+                                                              // colonne standard.
 
-          score =  this.abprouning(B, B.getAvailableColumns(), true, alpha, beta);
+          score = this.abprouning(B, B.getAvailableColumns(), true, alpha, beta);
         }
         minScore = Math.min(minScore, score);
         beta = Math.min(score, beta);
