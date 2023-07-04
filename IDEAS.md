@@ -1,3 +1,4 @@
-- Transposition board 
-- Iterative deepening
+- Transposition board CHECK
+- Null Window 
+- Iterative deepening 
 - seguire https://blog.gamesolver.org/
