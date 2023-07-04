@@ -105,7 +105,6 @@ public class BabbiniLibra implements CXPlayer {
     }
 
   }
-
   private Integer chooseMove(CXBoard B, Integer[] L) throws TimeoutException {
     int bestScore = -1000000; // one million
     int alpha = -1000000;
