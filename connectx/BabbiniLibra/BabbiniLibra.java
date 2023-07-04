@@ -93,6 +93,7 @@ public class BabbiniLibra implements CXPlayer {
       TOTALMOVES++;
       TOTALTIME += System.currentTimeMillis() - START;
       B.markColumn(move);
+      System.err.println("Total Moves: " + TOTALMOVES);
       return move;
     } catch (TimeoutException e) {
       TOTALMOVES++;
@@ -134,7 +135,7 @@ private Integer chooseMove(CXBoard B, Integer[]L) throws TimeoutException{
 }
   private int getNextColumn(CXBoard B, Integer i) {
     while (B.fullColumn(columnOrder[i])) {
-      i= (i+1) % B.M;
+      i= (i+1) % B.N;
     }
     return columnOrder[i];
   }
