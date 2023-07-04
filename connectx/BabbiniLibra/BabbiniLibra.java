@@ -152,8 +152,7 @@ public class BabbiniLibra implements CXPlayer {
     if (maximizer) {
       int maxScore = -1000000;
       int hash = B.getBoard().hashCode();
-      if (transpositionTable.containsKey(hash)) {
-        // System.out.println("transposition found");
+      if (transpositionTable.containsKey(hash)) { // se mossa già nella transpositionTable la guardo da qui, altrimenti eseguo l'alphabeta
         return transpositionTable.get(hash);
       }
       for (int i : L) {
