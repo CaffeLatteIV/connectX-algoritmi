@@ -138,7 +138,7 @@ private Integer chooseMove(CXBoard B, Integer[]L) throws TimeoutException{
 }
   private int getNextColumn(CXBoard B, Integer i) {
     while (B.fullColumn(columnOrder[i])) {
-      i= (i+1) % B.M;
+      i= (i+1) % B.N;
     }
     return columnOrder[i];
   }
