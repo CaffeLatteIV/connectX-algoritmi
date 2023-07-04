@@ -73,9 +73,13 @@ public class BabbiniLibra implements CXPlayer {
   }
 
   private void checkTime() throws TimeoutException {
-    if (((System.currentTimeMillis() - START) / 1000) >= TIMEOUT * (98.5 / 100.0)) {
+    long time = System.currentTimeMillis() - START;
+    if ((time / 1000) >= TIMEOUT * (90.0 / 100.0)) {
+
+      System.out.println("time: " + time);
       throw new TimeoutException();
     }
+
   }
 
   /**
@@ -96,9 +100,6 @@ public class BabbiniLibra implements CXPlayer {
       B.markColumn(move);
       return move;
     } catch (TimeoutException e) {
-      TOTALMOVES++;
-      TOTALTIME += System.currentTimeMillis() - START;
-      // System.err.println("timeout!!");
       return BESTMOVETMP;
     }
 
@@ -120,8 +121,6 @@ public class BabbiniLibra implements CXPlayer {
       } else {
         score = abprouning(B, B.getAvailableColumns(), false, alpha, beta);
       }
-      // System.out.println("evaluating column "+i);
-      // System.out.println("score "+score);
       if (bestScore < score) {
         bestScore = score;
         move = i;
@@ -129,9 +128,6 @@ public class BabbiniLibra implements CXPlayer {
       }
       B.unmarkColumn();
     }
-    // System.out.println("I choose column "+move);
-    // System.out.println("score "+bestScore);
-    // System.out.println();
     return move;
   }
 
@@ -140,7 +136,7 @@ public class BabbiniLibra implements CXPlayer {
       @Override
       public int compare(Integer a, Integer b) {
         int m = ((int) Math.floor(B.N / 2));
-        return Math.abs(m-a)- Math.abs(m-b);
+        return Math.abs(m - a) - Math.abs(m - b);
       }
     });
     return L;
@@ -150,9 +146,11 @@ public class BabbiniLibra implements CXPlayer {
     checkTime();
     L = sortl(B, L);
     if (maximizer) {
+      checkTime();
       int maxScore = -1000000;
       int hash = B.getBoard().hashCode();
-      if (transpositionTable.containsKey(hash)) { // se mossa già nella transpositionTable la guardo da qui, altrimenti eseguo l'alphabeta
+      if (transpositionTable.containsKey(hash)) { // se mossa già nella transpositionTable la guardo da qui, altrimenti
+                                                  // eseguo l'alphabeta
         return transpositionTable.get(hash);
       }
       for (int i : L) {
@@ -182,6 +180,7 @@ public class BabbiniLibra implements CXPlayer {
       transpositionTable.put(hash, maxScore);
       return maxScore;
     } else {
+      checkTime();
       // minimizer
       int minScore = 1000000;
       for (int i : L) {
