@@ -146,9 +146,7 @@ public class BabbiniLibra implements CXPlayer {
       for (int i : L) {
         checkTime();
         int score;
-        int j = i;
-        int col = getNextColumn(B, i);
-        if(i!=j) System.out.println("i è diverso dopo la funz");
+        int col = getNextColumn(B, i); //col is equal to columnOrder[i]
         CXGameState result = B.markColumn(col);
         int hash = B.getBoard().hashCode();
         if (transpositionTable.containsKey(hash)) {
