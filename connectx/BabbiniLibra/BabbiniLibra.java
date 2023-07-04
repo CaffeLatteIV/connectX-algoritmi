@@ -29,6 +29,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.sql.Time;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.concurrent.TimeoutException;
 
 /**
@@ -46,9 +47,9 @@ public class BabbiniLibra implements CXPlayer {
   private long START;
   private long TOTALTIME;
   private int TOTALMOVES;
-  private int [] columnOrder;
+  private int[] columnOrder;
   private int BESTMOVETMP;
-  
+  private HashMap<Integer, Integer> transpositionTable;
 
   /* Default empty constructor */
   public BabbiniLibra() {
@@ -60,11 +61,13 @@ public class BabbiniLibra implements CXPlayer {
     myWin = first ? CXGameState.WINP1 : CXGameState.WINP2;
     yourWin = first ? CXGameState.WINP2 : CXGameState.WINP1;
     TIMEOUT = timeout_in_secs;
-    TOTALMOVES=0;
-    TOTALTIME=0;
-    columnOrder = new int [N];
+    TOTALMOVES = 0;
+    TOTALTIME = 0;
+    columnOrder = new int[N];
+    transpositionTable = new HashMap<>();
     for (int i = 0; i < N; i++) {
-      columnOrder[i] = N/2 + (1-2*(i%2))*(i+1)/2; //inizializza l'ordine delle colonne partendo dal centro (euristica sulle migliori mosse)
+      columnOrder[i] = N / 2 + (1 - 2 * (i % 2)) * (i + 1) / 2; // inizializza l'ordine delle colonne partendo dal
+                                                                // centro (euristica sulle migliori mosse)
     }
   }
 
@@ -84,12 +87,12 @@ public class BabbiniLibra implements CXPlayer {
    */
   public int selectColumn(CXBoard B) {
     Integer[] L = B.getAvailableColumns();
-  
+
     START = System.currentTimeMillis(); // Save starting time
     BESTMOVETMP = getNextColumn(B, 0);
 
     try {
-      int move = chooseMove(B,L);
+      int move = chooseMove(B, L);
       TOTALMOVES++;
       TOTALTIME += System.currentTimeMillis() - START;
       B.markColumn(move);
@@ -102,43 +105,41 @@ public class BabbiniLibra implements CXPlayer {
     }
 
   }
-private Integer chooseMove(CXBoard B, Integer[]L) throws TimeoutException{
-   int bestScore = -1000;
+
+  private Integer chooseMove(CXBoard B, Integer[] L) throws TimeoutException {
+    int bestScore = -1000;
     int alpha = -1000;
     int beta = 1000;
     int move = L[0];
-  for (int i : L) {
-        checkTime();
-        int score;
-        int col = getNextColumn(B, i);
-        CXGameState result = B.markColumn(col);
-        if (result == myWin) {
-          score = 1;
-        } else if (result == CXGameState.DRAW) {
-          score = 0;
-        } else {
-          score = abprouning(B, B.getAvailableColumns(), false, alpha, beta);
-        }
-        if (bestScore < score) {
-          bestScore = score;
-          move = col;
-          BESTMOVETMP = col;
-        }
-        if (bestScore == 1) {
-          B.unmarkColumn();
-          return move;
-        }
-        B.unmarkColumn();
+    for (int i : L) {
+      checkTime();
+      int score;
+      int col = getNextColumn(B, i);
+      CXGameState result = B.markColumn(col);
+      if (result == myWin) {
+        score = 1;
+      } else if (result == CXGameState.DRAW) {
+        score = 0;
+      } else {
+        score = abprouning(B, B.getAvailableColumns(), false, alpha, beta);
       }
-      return move;
-}
+      if (bestScore < score) {
+        bestScore = score;
+        move = col;
+        BESTMOVETMP = col;
+      }
+      B.unmarkColumn();
+    }
+    return move;
+  }
+
   private int getNextColumn(CXBoard B, Integer i) {
     while (B.fullColumn(columnOrder[i])) {
-      i= (i+1) % B.M;
+      i = (i + 1) % B.N;
     }
     return columnOrder[i];
   }
-  
+
   private int abprouning(CXBoard B, Integer[] L, boolean maximizer, int alpha, int beta) throws TimeoutException {
     if (maximizer) {
       int maxScore = -1000;
@@ -147,6 +148,12 @@ private Integer chooseMove(CXBoard B, Integer[]L) throws TimeoutException{
         int score;
         int col = getNextColumn(B, i); //col is equal to columnOrder[i]
         CXGameState result = B.markColumn(col);
+        int hash = B.getBoard().hashCode();
+        if (transpositionTable.containsKey(hash)) {
+          // System.out.println("transposition found");
+          B.unmarkColumn();
+          return transpositionTable.get(hash);
+        }
         if (result == myWin) {
           score = 1;
         } else if (result == yourWin) {
@@ -156,6 +163,7 @@ private Integer chooseMove(CXBoard B, Integer[]L) throws TimeoutException{
         } else {
           score = this.abprouning(B, B.getAvailableColumns(), false, alpha, beta);
         }
+        transpositionTable.put(hash, score);
         if (score > beta) {
           B.unmarkColumn();
           break;
