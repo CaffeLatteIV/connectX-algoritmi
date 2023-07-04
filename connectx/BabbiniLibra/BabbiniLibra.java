@@ -30,6 +30,7 @@ import java.io.StringWriter;
 import java.sql.Time;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.concurrent.TimeoutException;
 
 /**
@@ -47,7 +48,7 @@ public class BabbiniLibra implements CXPlayer {
   private long START;
   private long TOTALTIME;
   private int TOTALMOVES;
-  private int[] columnOrder;
+  private LinkedList<Integer> columnOrder;
   private int BESTMOVETMP;
   private HashMap<Integer, Integer> transpositionTable;
 
@@ -63,11 +64,10 @@ public class BabbiniLibra implements CXPlayer {
     TIMEOUT = timeout_in_secs;
     TOTALMOVES = 0;
     TOTALTIME = 0;
-    columnOrder = new int[N];
+    columnOrder = new LinkedList<Integer>();
     transpositionTable = new HashMap<>();
     for (int i = 0; i < N; i++) {
-      columnOrder[i] = N / 2 + (1 - 2 * (i % 2)) * (i + 1) / 2; // inizializza l'ordine delle colonne partendo dal
-                                                                // centro (euristica sulle migliori mosse)
+      columnOrder.addLast(N / 2 + (1 - 2 * (i % 2)) * (i + 1) / 2); // inizializza l'ordine delle colonne partendo dal
     }
   }
 
@@ -105,7 +105,12 @@ public class BabbiniLibra implements CXPlayer {
     }
 
   }
-
+private void freeCols(CXBoard B, int i, LinkedList colOrd){
+  if(B.fullColumn(i)){
+    colOrd.remove(i);
+  }
+  }
+}
   private Integer chooseMove(CXBoard B, Integer[] L) throws TimeoutException {
     int bestScore = -1000;
     int alpha = -1000;
@@ -114,8 +119,12 @@ public class BabbiniLibra implements CXPlayer {
     for (int i : L) {
       checkTime();
       int score;
-      int col = getNextColumn(B, i);
+      int col = getNextColumn(B, i); //col is equal to columnOrder[i]
+      if (L.length < B.N){
+        freeCols(L);
+      }
       CXGameState result = B.markColumn(col);
+      // CXGameState result = B.markColumn(i);
       if (result == myWin) {
         score = 1;
       } else if (result == CXGameState.DRAW) {
@@ -123,6 +132,8 @@ public class BabbiniLibra implements CXPlayer {
       } else {
         score = abprouning(B, B.getAvailableColumns(), false, alpha, beta);
       }
+      System.out.println("evaluating column "+col);
+      System.out.println("score "+score);
       if (bestScore < score) {
         bestScore = score;
         move = col;
@@ -130,15 +141,18 @@ public class BabbiniLibra implements CXPlayer {
       }
       B.unmarkColumn();
     }
+    System.out.println("I choose column "+move);
+    System.out.println("score "+bestScore);
+    System.out.println();
     return move;
   }
 
-  private int getNextColumn(CXBoard B, Integer i) {
-    while (B.fullColumn(columnOrder[i])) {
-      i = (i + 1) % B.N;
-    }
-    return columnOrder[i];
-  }
+  // private int getNextColumn(CXBoard B, Integer i) {
+  //   while (B.fullColumn(columnOrder[i])) {
+  //     i = (i + 1) % B.N;
+  //   }
+  //   return columnOrder[i];
+  // }
 
   private int abprouning(CXBoard B, Integer[] L, boolean maximizer, int alpha, int beta) throws TimeoutException {
     if (maximizer) {
@@ -164,13 +178,12 @@ public class BabbiniLibra implements CXPlayer {
           score = this.abprouning(B, B.getAvailableColumns(), false, alpha, beta);
         }
         transpositionTable.put(hash, score);
-        if (score > beta) {
-          B.unmarkColumn();
+        maxScore = Math.max(maxScore, score);
+        alpha = Math.max(alpha, maxScore);
+        B.unmarkColumn();
+        if (beta<=alpha) {
           break;
         }
-        maxScore = Math.max(maxScore, score);
-        alpha = Math.max(alpha, score);
-        B.unmarkColumn();
       }
       return maxScore;
     } else {
@@ -190,13 +203,12 @@ public class BabbiniLibra implements CXPlayer {
         } else {
           score = this.abprouning(B, B.getAvailableColumns(), true, alpha, beta);
         }
-        if (score < alpha) {
-          B.unmarkColumn();
-          break;
-        }
         minScore = Math.min(minScore, score);
         beta = Math.min(score, beta);
         B.unmarkColumn();
+        if (beta <= alpha) {
+          break;
+        }
       }
       return minScore;
     }
