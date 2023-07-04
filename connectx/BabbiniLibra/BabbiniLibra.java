@@ -111,9 +111,9 @@ public class BabbiniLibra implements CXPlayer {
 //   }
 // }
   private Integer chooseMove(CXBoard B, Integer[] L) throws TimeoutException {
-    int bestScore = -1000000; // one million
-    int alpha = -1000000;
-    int beta = 1000000;
+    int bestScore = -1_000_000; // one million
+    int alpha = -1_000_000;
+    int beta = 1_000_000;
     int move = L[0];
     for (int i : L) {
       checkTime();
@@ -144,16 +144,15 @@ public class BabbiniLibra implements CXPlayer {
   private int abprouning(CXBoard B, Integer[] L, boolean maximizer, int alpha, int beta) throws TimeoutException {
     if (maximizer) {
       int maxScore = -1000000;
+      int hash = B.getBoard().hashCode();
+      if (transpositionTable.containsKey(hash)) {
+        // System.out.println("transposition found");
+        return transpositionTable.get(hash);
+      }
       for (int i : L) {
         checkTime();
         int score;
         CXGameState result = B.markColumn(i);
-        int hash = B.getBoard().hashCode();
-        if (transpositionTable.containsKey(hash)) {
-          // System.out.println("transposition found");
-          B.unmarkColumn();
-          return transpositionTable.get(hash);
-        }
         if (result == myWin) {
           score = 1000000;
         } else if (result == yourWin) {
@@ -167,7 +166,6 @@ public class BabbiniLibra implements CXPlayer {
                                                                   // colonne standard.
           score =  this.abprouning(B, B.getAvailableColumns(), false, alpha, beta);
         }
-        transpositionTable.put(hash, score);
         maxScore = Math.max(maxScore, score);
         alpha = Math.max(alpha, maxScore);
         B.unmarkColumn();
@@ -175,6 +173,7 @@ public class BabbiniLibra implements CXPlayer {
           break;
         }
       }
+      transpositionTable.put(hash, maxScore);
       return maxScore;
     } else {
       // minimizer
