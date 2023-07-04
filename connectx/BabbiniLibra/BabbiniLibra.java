@@ -145,7 +145,7 @@ private Integer chooseMove(CXBoard B, Integer[]L) throws TimeoutException{
       for (int i : L) {
         checkTime();
         int score;
-        int col = getNextColumn(B, i);
+        int col = getNextColumn(B, i); //col is equal to columnOrder[i]
         CXGameState result = B.markColumn(col);
         if (result == myWin) {
           score = 1;
