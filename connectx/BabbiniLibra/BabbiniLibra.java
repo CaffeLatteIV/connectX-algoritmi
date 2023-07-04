@@ -107,17 +107,16 @@ public class BabbiniLibra implements CXPlayer {
   }
 
   private Integer chooseMove(CXBoard B, Integer[] L) throws TimeoutException {
-    int bestScore = -1000;
-    int alpha = -1000;
-    int beta = 1000;
+    int bestScore = -1000000; // one million
+    int alpha = -1000000;
+    int beta = 1000000;
     int move = L[0];
     for (int i : L) {
       checkTime();
       int score;
-      int col = getNextColumn(B, i);
-      CXGameState result = B.markColumn(col);
+      CXGameState result = B.markColumn(i);
       if (result == myWin) {
-        score = 1;
+        score = 1000000; // one million
       } else if (result == CXGameState.DRAW) {
         score = 0;
       } else {
@@ -125,29 +124,21 @@ public class BabbiniLibra implements CXPlayer {
       }
       if (bestScore < score) {
         bestScore = score;
-        move = col;
-        BESTMOVETMP = col;
+        move = i;
+        BESTMOVETMP = i;
       }
       B.unmarkColumn();
     }
     return move;
   }
 
-  private int getNextColumn(CXBoard B, Integer i) {
-    while (B.fullColumn(columnOrder[i])) {
-      i = (i + 1) % B.N;
-    }
-    return columnOrder[i];
-  }
-
   private int abprouning(CXBoard B, Integer[] L, boolean maximizer, int alpha, int beta) throws TimeoutException {
     if (maximizer) {
-      int maxScore = -1000;
+      int maxScore = -1000000;
       for (int i : L) {
         checkTime();
         int score;
-        int col = getNextColumn(B, i); //col is equal to columnOrder[i]
-        CXGameState result = B.markColumn(col);
+        CXGameState result = B.markColumn(i);
         int hash = B.getBoard().hashCode();
         if (transpositionTable.containsKey(hash)) {
           // System.out.println("transposition found");
@@ -155,13 +146,17 @@ public class BabbiniLibra implements CXPlayer {
           return transpositionTable.get(hash);
         }
         if (result == myWin) {
-          score = 1;
+          score = 1000000;
         } else if (result == yourWin) {
-          score = -1;
+          score = -1000000;
         } else if (result == CXGameState.DRAW) {
           score = 0;
-        } else {
-          score = this.abprouning(B, B.getAvailableColumns(), false, alpha, beta);
+        } else { // OPEN Board
+          int cellWeight = (B.M + B.N) - (i + (1 - (i % 2))); // M+N valore di partenza, valore della cella
+                                                                  // direttamente proporzionale alla priorità della
+                                                                  // colonna. Non funziona se seguiamo ordine delle
+                                                                  // colonne standard.
+          score = cellWeight + this.abprouning(B, B.getAvailableColumns(), false, alpha, beta);
         }
         transpositionTable.put(hash, score);
         if (score > beta) {
@@ -175,20 +170,24 @@ public class BabbiniLibra implements CXPlayer {
       return maxScore;
     } else {
       // minimizer
-      int minScore = 1000;
+      int minScore = 1000000;
       for (int i : L) {
         checkTime();
         int score;
-        int col = getNextColumn(B, i);
-        CXGameState result = B.markColumn(col);
+        CXGameState result = B.markColumn(i);
         if (result == myWin) {
-          score = 1;
+          score = 1000000;
         } else if (result == yourWin) {
-          score = -1;
+          score = -1000000;
         } else if (result == CXGameState.DRAW) {
           score = 0;
         } else {
-          score = this.abprouning(B, B.getAvailableColumns(), true, alpha, beta);
+          int cellWeight = (B.M + B.N) - (i + (1 - (i % 2))); // M+N valore di partenza, valore della cella
+                                                                  // direttamente proporzionale alla priorità della
+                                                                  // colonna. Non funziona se seguiamo ordine delle
+                                                                  // colonne standard.
+
+          score =  cellWeight + this.abprouning(B, B.getAvailableColumns(), true, alpha, beta);
         }
         if (score < alpha) {
           B.unmarkColumn();
