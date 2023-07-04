@@ -107,7 +107,7 @@ public class BabbiniLibra implements CXPlayer {
   }
 private void freeCols(CXBoard B, int i, LinkedList colOrd){
   if(B.fullColumn(i)){
-    colOrd.remove(i);
+    colOrd.remove()
   }
   }
 }
@@ -119,11 +119,11 @@ private void freeCols(CXBoard B, int i, LinkedList colOrd){
     for (int i : L) {
       checkTime();
       int score;
-      int col = getNextColumn(B, i); //col is equal to columnOrder[i]
-      if (L.length < B.N){
-        freeCols(L);
-      }
-      CXGameState result = B.markColumn(col);
+      // int col = getNextColumn(B, i); //col is equal to columnOrder[i]
+      // if (L.length < B.N){
+      //   freeCols(L);
+      // }
+      CXGameState result = B.markColumn(i);
       // CXGameState result = B.markColumn(i);
       if (result == myWin) {
         score = 1;
@@ -132,12 +132,12 @@ private void freeCols(CXBoard B, int i, LinkedList colOrd){
       } else {
         score = abprouning(B, B.getAvailableColumns(), false, alpha, beta);
       }
-      System.out.println("evaluating column "+col);
+      System.out.println("evaluating column "+i);
       System.out.println("score "+score);
       if (bestScore < score) {
         bestScore = score;
-        move = col;
-        BESTMOVETMP = col;
+        move = i;
+        BESTMOVETMP = i;
       }
       B.unmarkColumn();
     }
@@ -147,21 +147,13 @@ private void freeCols(CXBoard B, int i, LinkedList colOrd){
     return move;
   }
 
-  // private int getNextColumn(CXBoard B, Integer i) {
-  //   while (B.fullColumn(columnOrder[i])) {
-  //     i = (i + 1) % B.N;
-  //   }
-  //   return columnOrder[i];
-  // }
-
   private int abprouning(CXBoard B, Integer[] L, boolean maximizer, int alpha, int beta) throws TimeoutException {
     if (maximizer) {
       int maxScore = -1000;
       for (int i : L) {
         checkTime();
         int score;
-        int col = getNextColumn(B, i); //col is equal to columnOrder[i]
-        CXGameState result = B.markColumn(col);
+        CXGameState result = B.markColumn(i);
         int hash = B.getBoard().hashCode();
         if (transpositionTable.containsKey(hash)) {
           // System.out.println("transposition found");
@@ -192,8 +184,7 @@ private void freeCols(CXBoard B, int i, LinkedList colOrd){
       for (int i : L) {
         checkTime();
         int score;
-        int col = getNextColumn(B, i);
-        CXGameState result = B.markColumn(col);
+        CXGameState result = B.markColumn(i);
         if (result == myWin) {
           score = 1;
         } else if (result == yourWin) {
