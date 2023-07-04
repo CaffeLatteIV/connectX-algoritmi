@@ -100,7 +100,7 @@ public class BabbiniLibra implements CXPlayer {
     } catch (TimeoutException e) {
       TOTALMOVES++;
       TOTALTIME += System.currentTimeMillis() - START;
-      System.err.println("timeout!!");
+      // System.err.println("timeout!!");
       return BESTMOVETMP;
     }
 
