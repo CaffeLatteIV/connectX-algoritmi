@@ -89,7 +89,7 @@ public class BabbiniLibra implements CXPlayer {
     Integer[] L = B.getAvailableColumns();
 
     START = System.currentTimeMillis(); // Save starting time
-    BESTMOVETMP = getNextColumn(B, 0);
+    BESTMOVETMP = L[0];
 
     try {
       int move = chooseMove(B, L);
@@ -105,12 +105,11 @@ public class BabbiniLibra implements CXPlayer {
     }
 
   }
-private void freeCols(CXBoard B, int i, LinkedList colOrd){
-  if(B.fullColumn(i)){
-    colOrd.remove()
-  }
-  }
-}
+// private void freeCols(CXBoard B, int i, LinkedList colOrd){
+//   if(B.fullColumn(i)){
+//     colOrd.remove();
+//   }
+// }
   private Integer chooseMove(CXBoard B, Integer[] L) throws TimeoutException {
     int bestScore = -1000;
     int alpha = -1000;
@@ -132,8 +131,8 @@ private void freeCols(CXBoard B, int i, LinkedList colOrd){
       } else {
         score = abprouning(B, B.getAvailableColumns(), false, alpha, beta);
       }
-      System.out.println("evaluating column "+i);
-      System.out.println("score "+score);
+      // System.out.println("evaluating column "+i);
+      // System.out.println("score "+score);
       if (bestScore < score) {
         bestScore = score;
         move = i;
@@ -141,9 +140,9 @@ private void freeCols(CXBoard B, int i, LinkedList colOrd){
       }
       B.unmarkColumn();
     }
-    System.out.println("I choose column "+move);
-    System.out.println("score "+bestScore);
-    System.out.println();
+    // System.out.println("I choose column "+move);
+    // System.out.println("score "+bestScore);
+    // System.out.println();
     return move;
   }
 
