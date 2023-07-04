@@ -105,11 +105,6 @@ public class BabbiniLibra implements CXPlayer {
     }
 
   }
-// private void freeCols(CXBoard B, int i, LinkedList colOrd){
-//   if(B.fullColumn(i)){
-//     colOrd.remove();
-//   }
-// }
   private Integer chooseMove(CXBoard B, Integer[] L) throws TimeoutException {
     int bestScore = -1_000_000; // one million
     int alpha = -1_000_000;
