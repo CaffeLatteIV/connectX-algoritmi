@@ -142,6 +142,7 @@ public class BabbiniLibra implements CXPlayer {
   }
 
   private int abprouning(CXBoard B, Integer[] L, boolean maximizer, int alpha, int beta) throws TimeoutException {
+    checkTime();
     if (maximizer) {
       int maxScore = -1000000;
       int hash = B.getBoard().hashCode();
