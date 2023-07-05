@@ -45,8 +45,9 @@ public class BabbiniLibra implements CXPlayer {
   private long START;
   private long TOTALTIME;
   private int TOTALMOVES;
-  private LinkedList<Integer> columnOrder;
+  private Integer[] columnOrder;
   private int BESTMOVETMP;
+  private int DEPTH;
   private HashMap<Integer, Integer> transpositionTable;
 
   /* Default empty constructor */
@@ -60,11 +61,12 @@ public class BabbiniLibra implements CXPlayer {
     yourWin = first ? CXGameState.WINP2 : CXGameState.WINP1;
     TIMEOUT = timeout_in_secs;
     TOTALMOVES = 0;
+    DEPTH = 0;
     TOTALTIME = 0;
-    columnOrder = new LinkedList<Integer>();
+    columnOrder = new Integer[N];
     transpositionTable = new HashMap<>();
     for (int i = 0; i < N; i++) {
-      columnOrder.addLast(N / 2 + (1 - 2 * (i % 2)) * (i + 1) / 2); // inizializza l'ordine delle colonne partendo dal
+      columnOrder[i] = N / 2 + (1 - 2 * (i % 2)) * (i + 1) / 2; // inizializza l'ordine delle colonne partendo dal
     }
   }
 
@@ -88,7 +90,8 @@ public class BabbiniLibra implements CXPlayer {
    */
   public int selectColumn(CXBoard B) {
     START = System.currentTimeMillis(); // Save starting time
-    Integer[] L = sortl(B, B.getAvailableColumns());
+    DEPTH = 0;
+    Integer[] L = columnOrder;
     BESTMOVETMP = L[0];
 
     try {
@@ -106,41 +109,36 @@ public class BabbiniLibra implements CXPlayer {
     int alpha = -1_000_000;
     int beta = 1_000_000;
     int move = L[0];
-    for (int i : L) {
+    for (int i : columnOrder) {
+      if (B.fullColumn(i)) {
+        continue;
+      }
       checkTime();
       int score;
       CXGameState result = B.markColumn(i);
       if (result == myWin) {
-        score = 1_000_000; // one million
+        score = (B.M * B.N - 1 - DEPTH / 2);
       } else if (result == CXGameState.DRAW) {
         score = 0;
       } else {
-        score = abprouning(B, B.getAvailableColumns(), false, alpha, beta);
+        score = abprouningCount(B, false, alpha, beta);
       }
+      alpha = Math.max(alpha, score);
       if (bestScore < score) {
         bestScore = score;
         move = i;
         BESTMOVETMP = i;
       }
       B.unmarkColumn();
+      if (beta <= alpha) {
+        break;
+      }
     }
     return move;
   }
 
-  private Integer[] sortl(CXBoard B, Integer[] L) {
-    Arrays.sort(L, new Comparator<Integer>() {
-      @Override
-      public int compare(Integer a, Integer b) {
-        int m = ((int) Math.floor(B.N / 2));
-        return Math.abs(m - a) - Math.abs(m - b);
-      }
-    });
-    return L;
-  }
-
-  private int abprouning(CXBoard B, Integer[] L, boolean maximizer, int alpha, int beta) throws TimeoutException {
+  private int abprouning(CXBoard B, boolean maximizer, int alpha, int beta) throws TimeoutException {
     checkTime();
-    L = sortl(B, L);
     if (maximizer) {
       checkTime();
       int maxScore = -1_000_000;
@@ -149,8 +147,11 @@ public class BabbiniLibra implements CXPlayer {
                                                   // eseguo l'alphabeta
         return transpositionTable.get(hash);
       }
-      for (int i : L) {
+      for (int i : columnOrder) {
         checkTime();
+        if (B.fullColumn(i)) {
+          continue;
+        }
         int score;
         CXGameState result = B.markColumn(i);
         if (result == myWin) {
@@ -164,7 +165,7 @@ public class BabbiniLibra implements CXPlayer {
                                                               // direttamente proporzionale alla priorità della
                                                               // colonna. Non funziona se seguiamo ordine delle
                                                               // colonne standard.
-          score = this.abprouning(B, B.getAvailableColumns(), false, alpha, beta);
+          score = this.abprouning(B, false, alpha, beta);
         }
         maxScore = Math.max(maxScore, score);
         alpha = Math.max(alpha, maxScore);
@@ -178,15 +179,18 @@ public class BabbiniLibra implements CXPlayer {
     } else {
       checkTime();
       // minimizer
-      int minScore = 1000000;
-      for (int i : L) {
+      int minScore = B.N * B.M;
+      for (int i : columnOrder) {
         checkTime();
+        if (B.fullColumn(i)) {
+          continue;
+        }
         int score;
         CXGameState result = B.markColumn(i);
         if (result == myWin) {
-          score = 1000000;
+          score = 1_000_000;
         } else if (result == yourWin) {
-          score = -1000000;
+          score = -1_000_000;
         } else if (result == CXGameState.DRAW) {
           score = 0;
         } else {
@@ -195,7 +199,7 @@ public class BabbiniLibra implements CXPlayer {
                                                               // colonna. Non funziona se seguiamo ordine delle
                                                               // colonne standard.
 
-          score = this.abprouning(B, B.getAvailableColumns(), true, alpha, beta);
+          score = this.abprouning(B, true, alpha, beta);
         }
         minScore = Math.min(minScore, score);
         beta = Math.min(score, beta);
@@ -208,55 +212,95 @@ public class BabbiniLibra implements CXPlayer {
     }
   }
 
-  private int negamax(CXBoard B) {
-    if (B.numOfMarkedCells() == B.M * B.N) { // check for draw game
-      return 0;
-    }
-    for (int x = 0; x < B.N; x++) // check if current player can win next move
-      if (!B.fullColumn(x)) {
-        CXGameState move = B.markColumn(x);
-        if (move == CXGameState.WINP1 || move == CXGameState.WINP2) {
-          B.unmarkColumn();
-          return (B.N * B.M + 1 - B.numOfMarkedCells()) / 2;
+  private int abprouningCount(CXBoard B, boolean maximizer, int alpha, int beta) throws TimeoutException {
+    if (maximizer) {
+      checkTime();
+      int maxScore = -B.N * B.M;
+      int hash = B.getBoard().hashCode();
+      if (transpositionTable.containsKey(hash)) { // se mossa già nella transpositionTable la guardo da qui, altrimenti
+                                                  // eseguo l'alphabeta
+        return transpositionTable.get(hash);
+      }
+      for (int i : columnOrder) {
+        checkTime();
+        if (B.fullColumn(i)) {
+          continue;
+        }
+        int score;
+        CXGameState result = B.markColumn(i);
+        DEPTH++;
+        if (result == myWin) {
+          score = (B.M * B.N - 1 - DEPTH / 2);
+        } else if (result == CXGameState.DRAW) {
+          score = 0;
+        } else { // OPEN Board
+          score = this.abprouning(B, false, alpha, beta);
+        }
+        if (score >0){
+          maxScore = Math.min(maxScore,score);
+        }else{
+          maxScore = Math.max(maxScore, score);
+        }
+        alpha = Math.max(alpha, maxScore);
+        DEPTH--;
+        B.unmarkColumn();
+        if (beta <= alpha) {
+          break;
         }
       }
-
-    int bestScore = -B.N * B.M; // init the best possible score with a lower bound of score.
-
-    for (int x = 0; x < B.N; x++) { // compute the score of all possible next move and keep the best one
-      if (!B.fullColumn(x)) {
-        B.markColumn(x);
-        int score = -negamax(B); // If current player plays col x, his score will be the opposite of opponent's
-                                 // score after playing col x
-        if (score > bestScore)
-          bestScore = score; // keep track of best possible score so far.
+      transpositionTable.put(hash, maxScore);
+      return maxScore;
+    } else {
+      checkTime();
+      // minimizer
+      int minScore = B.N * B.M;
+      for (int i : columnOrder) {
+        checkTime();
+        if (B.fullColumn(i)) {
+          continue;
+        }
+        int score;
+        CXGameState result = B.markColumn(i);
+        if (result == yourWin) {
+          score = -(B.M * B.N - 1 - DEPTH / 2);
+        } else if (result == CXGameState.DRAW) {
+          score = 0;
+        } else {
+          score = this.abprouning(B, true, alpha, beta);
+        }
+        minScore = Math.min(minScore, score);
+        beta = Math.min(score, beta);
+        B.unmarkColumn();
+        if (beta <= alpha) {
+          break;
+        }
       }
-      B.unmarkColumn();
+      return minScore;
     }
-    return bestScore;
   }
 
   // public int nullWindow() {
-  //   int min = -(Position::WIDTH * Position::HEIGHT - P.nbMoves()) / 2;
-  //   int max = (Position::WIDTH * Position::HEIGHT + 1 - P.nbMoves()) / 2;
-  //   if (weak) {
-  //     min = -1;
-  //     max = 1;
-  //   }
-  //   while (min < max) { // iteratively narrow the min-max exploration window
-  //     int med = min + (max - min) / 2;
-  //     if (med <= 0 && min / 2 < med)
-  //       med = min / 2;
-  //     else if (med >= 0 && max / 2 > med)
-  //       med = max / 2;
-  //     int r = negamax(P, med, med + 1); // use a null depth window to know if the actual score is greater or smaller
-  //                                       // than med
-  //     if (r <= med)
-  //       max = r;
-  //     else
-  //       min = r;
-  //   }
-  //   return min;
+  // int min = -(Position::WIDTH * Position::HEIGHT - P.nbMoves()) / 2;
+  // int max = (Position::WIDTH * Position::HEIGHT + 1 - P.nbMoves()) / 2;
+  // if (weak) {
+  // min = -1;
+  // max = 1;
+  // }
+  // while (min < max) { // iteratively narrow the min-max exploration window
+  // int med = min + (max - min) / 2;
+  // if (med <= 0 && min / 2 < med)
+  // med = min / 2;
+  // else if (med >= 0 && max / 2 > med)
+  // med = max / 2;
+  // int r = negamax(P, med, med + 1); // use a null depth window to know if the
+  // actual score is greater or smaller
+  // // than med
+  // if (r <= med)
+  // max = r;
+  // else
+  // min = r;
+  // }
+  // return min;
   // }
 
   public String playerName() {
