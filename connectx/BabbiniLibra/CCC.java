@@ -66,8 +66,8 @@ public class CCC implements CXPlayer {
       CXGameState state = B.markColumn(i);
       if (state == myWin) {
         B.unmarkColumn();
-      return move;
-    }
+        return i;
+      }
       int score = -negamax(B);
       B.unmarkColumn();
       if (score > bestScore) {
@@ -75,7 +75,10 @@ public class CCC implements CXPlayer {
         move = i;
         BESTMOVETMP = i;
       }
+      // System.out.println("Move " + i + " Score " + score);
     }
+    // System.out.println("Best move " + move + " Best score " + bestScore);
+    // System.out.println();
     return move;
   }
 
@@ -83,32 +86,26 @@ public class CCC implements CXPlayer {
     CXGameState state = B.gameState();
     if (state == CXGameState.DRAW) { // check for draw game
       return 0;
-    } 
+    }
     for (int x = 0; x < B.N; x++) { // check if current player can win next move
       if (!B.fullColumn(x)) {
         CXGameState move = B.markColumn(x);
         B.unmarkColumn();
-        if (move == CXGameState.WINP1 || move == CXGameState.WINP2) {
+        if (move == myWin || move == yourWin) {
           return (B.N * B.M - 1 - B.numOfMarkedCells()) / 2;
         }
       }
     }
-    // int max = (B.N * B.M - 1 - B.numOfMarkedCells()) / 2; // upper bound of our score as we cannot win immediately
-    // if (beta > max) {
-    //   beta = max; // there is no need to keep beta above our max possible score.
-    //   if (alpha >= beta) {
-    //     return beta; // prune the exploration if the [alpha;beta] window is empty.
-    //   }
-    // }
-    int bestScore = -B.N*B.M;
+    int bestScore = -B.N * B.M;
     for (int x = 0; x < B.N; x++) { // compute the score of all possible next move and keep the best one
       if (!B.fullColumn(x)) {
         B.markColumn(x);
-        int score = -negamax(B); // If current player plays col x, his score will be the opposite of the other player 
+        int score = -negamax(B); // If current player plays col x, his score will be the opposite of the other
+                                 // player
         B.unmarkColumn();
         if (score > bestScore) {
           bestScore = score; // prune the exploration if we find a possible move better than what we were
-                        // looking for.
+          // looking for.
         }
       }
     }
