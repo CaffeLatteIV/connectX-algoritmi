@@ -21,18 +21,14 @@ package connectx.BabbiniLibra;
 import connectx.CXPlayer;
 import connectx.CXBoard;
 import connectx.CXGameState;
-import connectx.CXCell;
-import java.util.TreeSet;
 import java.util.Random;
-import java.beans.beancontext.BeanContext;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.sql.Time;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.concurrent.TimeoutException;
+
+import javax.swing.text.Position;
 
 /**
  * Software player only a bit smarter than random.
@@ -115,7 +111,7 @@ public class BabbiniLibra implements CXPlayer {
       int score;
       CXGameState result = B.markColumn(i);
       if (result == myWin) {
-        score = 1000000; // one million
+        score = 1_000_000; // one million
       } else if (result == CXGameState.DRAW) {
         score = 0;
       } else {
@@ -147,7 +143,7 @@ public class BabbiniLibra implements CXPlayer {
     L = sortl(B, L);
     if (maximizer) {
       checkTime();
-      int maxScore = -1000000;
+      int maxScore = -1_000_000;
       int hash = B.getBoard().hashCode();
       if (transpositionTable.containsKey(hash)) { // se mossa già nella transpositionTable la guardo da qui, altrimenti
                                                   // eseguo l'alphabeta
@@ -158,9 +154,9 @@ public class BabbiniLibra implements CXPlayer {
         int score;
         CXGameState result = B.markColumn(i);
         if (result == myWin) {
-          score = 1000000;
+          score = 1_000_000;
         } else if (result == yourWin) {
-          score = -1000000;
+          score = -1_000_000;
         } else if (result == CXGameState.DRAW) {
           score = 0;
         } else { // OPEN Board
@@ -211,6 +207,57 @@ public class BabbiniLibra implements CXPlayer {
       return minScore;
     }
   }
+
+  private int negamax(CXBoard B) {
+    if (B.numOfMarkedCells() == B.M * B.N) { // check for draw game
+      return 0;
+    }
+    for (int x = 0; x < B.N; x++) // check if current player can win next move
+      if (!B.fullColumn(x)) {
+        CXGameState move = B.markColumn(x);
+        if (move == CXGameState.WINP1 || move == CXGameState.WINP2) {
+          B.unmarkColumn();
+          return (B.N * B.M + 1 - B.numOfMarkedCells()) / 2;
+        }
+      }
+
+    int bestScore = -B.N * B.M; // init the best possible score with a lower bound of score.
+
+    for (int x = 0; x < B.N; x++) { // compute the score of all possible next move and keep the best one
+      if (!B.fullColumn(x)) {
+        B.markColumn(x);
+        int score = -negamax(B); // If current player plays col x, his score will be the opposite of opponent's
+                                 // score after playing col x
+        if (score > bestScore)
+          bestScore = score; // keep track of best possible score so far.
+      }
+      B.unmarkColumn();
+    }
+    return bestScore;
+  }
+
+  // public int nullWindow() {
+  //   int min = -(Position::WIDTH * Position::HEIGHT - P.nbMoves()) / 2;
+  //   int max = (Position::WIDTH * Position::HEIGHT + 1 - P.nbMoves()) / 2;
+  //   if (weak) {
+  //     min = -1;
+  //     max = 1;
+  //   }
+  //   while (min < max) { // iteratively narrow the min-max exploration window
+  //     int med = min + (max - min) / 2;
+  //     if (med <= 0 && min / 2 < med)
+  //       med = min / 2;
+  //     else if (med >= 0 && max / 2 > med)
+  //       med = max / 2;
+  //     int r = negamax(P, med, med + 1); // use a null depth window to know if the actual score is greater or smaller
+  //                                       // than med
+  //     if (r <= med)
+  //       max = r;
+  //     else
+  //       min = r;
+  //   }
+  //   return min;
+  // }
 
   public String playerName() {
     return "Babbini-Libra";
