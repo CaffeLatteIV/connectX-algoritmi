@@ -49,10 +49,10 @@ public class BabbiniLibra implements CXPlayer {
   private int TOTALMOVES;
   private Integer[] columnOrder;
   private int BESTMOVETMP;
-  private int DEPTH;
+  private Boolean FIRSTMOVE;
   private HashMap<Integer, Integer> transpositionTable;
   private Integer[][] CELLWEIGHT;
-  int countPass;
+  int desiredDepth;
 
   /* Default empty constructor */
   public BabbiniLibra() {
@@ -65,12 +65,11 @@ public class BabbiniLibra implements CXPlayer {
     yourWin = first ? CXGameState.WINP2 : CXGameState.WINP1;
     TIMEOUT = timeout_in_secs;
     TOTALMOVES = 0;
-    DEPTH = 0;
+    FIRSTMOVE = true;
     TOTALTIME = 0;
     columnOrder = new Integer[N];
     transpositionTable = new HashMap<>();
     CELLWEIGHT = new Integer[M][N];
-    countPass = 0;
 
     // inizializzo CELLWEIGHT con valori più alti quanto più si è al centro
     int centerR = N / 2;
@@ -86,6 +85,26 @@ public class BabbiniLibra implements CXPlayer {
                                                                                      // (valori negativi)
       }
     }
+    // inizializzo desiredDepth
+    int dim = Math.max(M, N);
+    if (dim == 4) {
+      desiredDepth = 30;
+    } else if (dim <= 7) {
+      desiredDepth = 12;
+    } else if (dim > 7 && dim <= 10) {
+      desiredDepth = 8;
+    } else if (dim > 10 && dim <= 13) {
+      desiredDepth = 6;
+    } else if (dim > 13 && dim <= 15) {
+      desiredDepth = 5;
+    } else if (dim > 15 && dim <= 20) {
+      desiredDepth = 4;
+    } else if (dim > 20 && dim <= 30) {
+      desiredDepth = 3;
+    } else if (dim > 30) {
+      desiredDepth = 2;
+    }
+
     // inizializzo columnOrder
     for (int i = 0; i < N; i++) {
       columnOrder[i] = N / 2 + (1 - 2 * (i % 2)) * (i + 1) / 2;
@@ -111,7 +130,6 @@ public class BabbiniLibra implements CXPlayer {
    */
   public int selectColumn(CXBoard B) {
     START = System.currentTimeMillis(); // Save starting time
-    DEPTH = 0;
     Integer[] L = columnOrder;
     int i = 0;
     while (B.fullColumn(L[i])) {
@@ -146,7 +164,8 @@ public class BabbiniLibra implements CXPlayer {
         B.unmarkColumn();
         return i;
       }
-      int score = -negamax(B, -beta, -alpha, 10);
+
+      int score = -negamax(B, -beta, -alpha, desiredDepth);
       B.unmarkColumn();
       if (score > bestScore) {
         bestScore = score;
@@ -163,7 +182,6 @@ public class BabbiniLibra implements CXPlayer {
     }
     // System.out.println("Best column " + move + " Best score " + bestScore);
     // System.out.println();
-    countPass++;
     return move;
   }
 
@@ -191,21 +209,17 @@ public class BabbiniLibra implements CXPlayer {
       }
     }
 
-    
-
-
     if (depth <= 0) {
-      return evaluation(B, B.getLastMove(), depth) ;
+      return evaluation(B, B.getLastMove(), depth);
     }
-
-
 
     for (int x = 0; x < B.N; x++) { // compute the score of all possible next move and keep the best one
       checkTime();
       if (!B.fullColumn(x)) {
         B.markColumn(x);
-        int score = -negamax(B, -beta, -alpha, depth-1); // If current player plays col x, his score will be the opposite of the
-                                                // other
+        int score = -negamax(B, -beta, -alpha, depth - 1); // If current player plays col x, his score will be the
+                                                           // opposite of the
+        // other
         // player
         B.unmarkColumn();
         if (score >= beta) {
@@ -226,8 +240,25 @@ public class BabbiniLibra implements CXPlayer {
     } else if (countPlayer == 0 && countOpponent > 0) {
       // Opponent has a potential winning position
       return -(int) Math.pow(10, countOpponent);
+    } else if (countPlayer > 0 && countOpponent > 0) {
+      // Both player and opponent have potential winning positions, evaluate them
+      // based on the number of connected pieces
+      return (int) Math.pow(10, countPlayer) - (int) Math.pow(10, countOpponent);
+    } else {
+      // No potential winning positions
+      // Evaluate based on the number of player pieces in the line
+      int score = 0;
+      if (countPlayer > 0) {
+        score += Math.pow(2, countPlayer - 1);
+      }
+
+      // Evaluate based on the number of opponent pieces in the line
+      if (countOpponent > 0) {
+        score -= Math.pow(2, countOpponent - 1);
+      }
+
+      return score;
     }
-    return 0;
   }
 
   private int evaluation(CXBoard B, CXCell lastMove, int depth) throws TimeoutException {
@@ -330,6 +361,7 @@ public class BabbiniLibra implements CXPlayer {
       }
     }
     if (score > BESTMOVETMP) {
+      // BESTMOVETMP = score;
     }
     return score;
   }
