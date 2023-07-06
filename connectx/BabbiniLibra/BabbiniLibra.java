@@ -1,6 +1,6 @@
 /*
  *  Copyright (C) 2022 Lamberto Colazzo
- *  
+ *
  *  This file is part of the ConnectX software developed for the
  *  Intern ship of the course "Information technology", University of Bologna
  *  A.Y. 2021-2022.
@@ -20,6 +20,7 @@ package connectx.BabbiniLibra;
 
 import connectx.CXPlayer;
 import connectx.CXBoard;
+import connectx.CXCellState;
 import connectx.CXGameState;
 import java.util.Random;
 import java.util.Arrays;
@@ -49,6 +50,7 @@ public class BabbiniLibra implements CXPlayer {
   private int BESTMOVETMP;
   private int DEPTH;
   private HashMap<Integer, Integer> transpositionTable;
+  private Integer[][] CELLWEIGHT;
 
   /* Default empty constructor */
   public BabbiniLibra() {
@@ -65,8 +67,31 @@ public class BabbiniLibra implements CXPlayer {
     TOTALTIME = 0;
     columnOrder = new Integer[N];
     transpositionTable = new HashMap<>();
+    CELLWEIGHT = new Integer[M][N];
+
+    // inizializzo CELLWEIGHT con valori più alti quanto più si è al centro
+    int centerR = N / 2;
+    int centerC = M / 2;
+
+    for (int i = 0; i < M; i++) {
+      for (int j = 0; j < N; j++) {
+        int distToCenterR = (int) Math.pow(Math.abs(j - centerR) + 2, 2);
+        int distToCenterC = (int) Math.pow(Math.abs(i - centerC) + 2, 2);
+        CELLWEIGHT[i][j] = Math.max(((M * N) - (distToCenterC + distToCenterR)), 1); // non scendo sotto 1 perchè
+                                                                                     // giocare una mossa è meglio del
+                                                                                     // pareggio (0) o della sconfitta
+                                                                                     // (valori negativi)
+      }
+    }
+    for (int i = 0; i < M; i++) {
+      for (int j = 0; j < N; j++) {
+        System.out.print(CELLWEIGHT[i][j] + "\t");
+      }
+      System.out.println();
+    }
+    // inizializzo columnOrder
     for (int i = 0; i < N; i++) {
-      columnOrder[i] = N / 2 + (1 - 2 * (i % 2)) * (i + 1) / 2; // inizializza l'ordine delle colonne partendo dal
+      columnOrder[i] = N / 2 + (1 - 2 * (i % 2)) * (i + 1) / 2;
     }
   }
 
@@ -161,10 +186,6 @@ public class BabbiniLibra implements CXPlayer {
         } else if (result == CXGameState.DRAW) {
           score = 0;
         } else { // OPEN Board
-          int cellWeight = (B.M + B.N) - (i + (1 - (i % 2))); // M+N valore di partenza, valore della cella
-                                                              // direttamente proporzionale alla priorità della
-                                                              // colonna. Non funziona se seguiamo ordine delle
-                                                              // colonne standard.
           score = this.abprouning(B, false, alpha, beta);
         }
         maxScore = Math.max(maxScore, score);
@@ -194,11 +215,6 @@ public class BabbiniLibra implements CXPlayer {
         } else if (result == CXGameState.DRAW) {
           score = 0;
         } else {
-          int cellWeight = (B.M + B.N) - (i + (1 - (i % 2))); // M+N valore di partenza, valore della cella
-                                                              // direttamente proporzionale alla priorità della
-                                                              // colonna. Non funziona se seguiamo ordine delle
-                                                              // colonne standard.
-
           score = this.abprouning(B, true, alpha, beta);
         }
         minScore = Math.min(minScore, score);
@@ -236,9 +252,9 @@ public class BabbiniLibra implements CXPlayer {
         } else { // OPEN Board
           score = this.abprouning(B, false, alpha, beta);
         }
-        if (score >0){
-          maxScore = Math.min(maxScore,score);
-        }else{
+        if (score > 0) {
+          maxScore = Math.min(maxScore, score);
+        } else {
           maxScore = Math.max(maxScore, score);
         }
         alpha = Math.max(alpha, maxScore);
@@ -276,6 +292,21 @@ public class BabbiniLibra implements CXPlayer {
         }
       }
       return minScore;
+    }
+  }
+
+  private int evaluation(CXBoard B, int col) {
+    if (DEPTH < (B.M - B.X)) {
+      //valutazione con valore della cella: O(1) ma euristica molto debole. Usata per non appesantire troppo alphabeta da subito
+      CXCellState[][] board = B.getBoard();
+      int max = 0;
+      for (int i=0; i<B.M; i++) { //scorro le righe della colonna per trovare la prima libera, poi ritorno il valore
+        if (B.cellState(i, col) == CXCellState.FREE){
+          return CELLWEIGHT[i][col];
+        }
+      }
+    } else {
+      // valutazione con celle vicine: O(M*N(*K)) ma euristica forte.
     }
   }
 
