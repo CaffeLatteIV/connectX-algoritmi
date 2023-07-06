@@ -20,6 +20,7 @@ package connectx.BabbiniLibra;
 
 import connectx.CXPlayer;
 import connectx.CXBoard;
+import connectx.CXCell;
 import connectx.CXCellState;
 import connectx.CXGameState;
 import java.util.Random;
@@ -51,6 +52,7 @@ public class BabbiniLibra implements CXPlayer {
   private int DEPTH;
   private HashMap<Integer, Integer> transpositionTable;
   private Integer[][] CELLWEIGHT;
+  int countPass;
 
   /* Default empty constructor */
   public BabbiniLibra() {
@@ -68,6 +70,7 @@ public class BabbiniLibra implements CXPlayer {
     columnOrder = new Integer[N];
     transpositionTable = new HashMap<>();
     CELLWEIGHT = new Integer[M][N];
+    countPass = 0;
 
     // inizializzo CELLWEIGHT con valori più alti quanto più si è al centro
     int centerR = N / 2;
@@ -110,13 +113,18 @@ public class BabbiniLibra implements CXPlayer {
     START = System.currentTimeMillis(); // Save starting time
     DEPTH = 0;
     Integer[] L = columnOrder;
-    BESTMOVETMP = L[0];
+    int i = 0;
+    while (B.fullColumn(L[i])) {
+      i++;
+    }
+    BESTMOVETMP = L[i];
 
     try {
       int move = chooseMove(B, L);
       B.markColumn(move);
       return move;
     } catch (TimeoutException e) {
+      System.out.println("timeout. moves: " + (B.N * B.M - 1 - B.numOfMarkedCells()) / 2);
       return BESTMOVETMP;
     }
 
@@ -128,6 +136,7 @@ public class BabbiniLibra implements CXPlayer {
     int alpha = -(B.N * B.M - 1 - B.numOfMarkedCells()) / 2;
     int move = L[0];
     for (int i : columnOrder) {
+      checkTime();
       if (B.fullColumn(i)) {
         continue;
       }
@@ -137,32 +146,35 @@ public class BabbiniLibra implements CXPlayer {
         B.unmarkColumn();
         return i;
       }
-      int score = -negamax(B, -beta, -alpha);
+      int score = -negamax(B, -beta, -alpha, 10);
       B.unmarkColumn();
       if (score > bestScore) {
         bestScore = score;
         move = i;
         BESTMOVETMP = i;
       }
-       if (score >= beta) {
-          return i;
-        }
-        if (score > alpha) {
-          alpha = score;
-        }
+      if (score >= beta) {
+        return i;
+      }
+      if (score > alpha) {
+        alpha = score;
+      }
       // System.out.println("Column " + i + " Score " + score);
     }
     // System.out.println("Best column " + move + " Best score " + bestScore);
     // System.out.println();
+    countPass++;
     return move;
   }
 
-  private int negamax(CXBoard B, int alpha, int beta) {
+  private int negamax(CXBoard B, int alpha, int beta, int depth) throws TimeoutException {
     CXGameState state = B.gameState();
+
     if (state == CXGameState.DRAW) { // check for draw game
       return 0;
     }
     for (int x : columnOrder) { // check if current player can win next move
+      checkTime();
       if (!B.fullColumn(x)) {
         CXGameState move = B.markColumn(x);
         B.unmarkColumn();
@@ -178,10 +190,21 @@ public class BabbiniLibra implements CXPlayer {
         return beta;
       }
     }
+
+    
+
+
+    if (depth <= 0) {
+      return evaluation(B, B.getLastMove(), depth) ;
+    }
+
+
+
     for (int x = 0; x < B.N; x++) { // compute the score of all possible next move and keep the best one
+      checkTime();
       if (!B.fullColumn(x)) {
         B.markColumn(x);
-        int score = -negamax(B, -beta, -alpha); // If current player plays col x, his score will be the opposite of the
+        int score = -negamax(B, -beta, -alpha, depth-1); // If current player plays col x, his score will be the opposite of the
                                                 // other
         // player
         B.unmarkColumn();
@@ -196,45 +219,120 @@ public class BabbiniLibra implements CXPlayer {
     return alpha;
   }
 
-  // private int evaluation(CXBoard B, int col) {
-  //   if (DEPTH < (B.M - B.X)) {
-  //     // valutazione con valore della cella: O(1) ma euristica molto debole. Usata per
-  //     // non appesantire troppo alphabeta da subito
-  //     CXCellState[][] board = B.getBoard();
-  //     int max = 0;
-  //     for (int i = 0; i < B.M; i++) { // scorro le righe della colonna per trovare la prima libera, poi ritorno il
-  //                                     // valore
-  //       if (B.cellState(i, col) == CXCellState.FREE) {
-  //         return CELLWEIGHT[i][col];
-  //       }
-  //     }
-  //   } else {
-  //     // valutazione con celle vicine: O(M*N(*K)) ma euristica forte.
-  //   }
-  // }
+  private int evaluateCounts(int countPlayer, int countOpponent) {
+    if (countPlayer > 0 && countOpponent == 0) {
+      // Player has a potential winning position
+      return (int) Math.pow(10, countPlayer);
+    } else if (countPlayer == 0 && countOpponent > 0) {
+      // Opponent has a potential winning position
+      return -(int) Math.pow(10, countOpponent);
+    }
+    return 0;
+  }
 
-  // public int nullWindow() {
-  // int min = -(Position::WIDTH * Position::HEIGHT - P.nbMoves()) / 2;
-  // int max = (Position::WIDTH * Position::HEIGHT + 1 - P.nbMoves()) / 2;
-  // if (weak) {
-  // min = -1;
-  // max = 1;
-  // }
-  // while (min < max) { // iteratively narrow the min-max exploration window
-  // int med = min + (max - min) / 2;
-  // if (med <= 0 && min / 2 < med)
-  // med = min / 2;
-  // else if (med >= 0 && max / 2 > med)
-  // med = max / 2;
-  // int r = negamax(P, med, med + 1); // use a null depth window to know if the
-  // actual score is greater or smaller
-  // // than med
-  // if (r <= med)
-  // max = r;
-  // else
-  // min = r;
-  // }
-  // return min;
+  private int evaluation(CXBoard B, CXCell lastMove, int depth) throws TimeoutException {
+    checkTime();
+    // if (depth < (B.X / 2)) {
+    // // valutazione con valore della cella: O(1) ma euristica molto debole. Usata
+    // per
+    // // non appesantire troppo alphabeta da subito
+    // for (int i = 0; i < B.M; i++) { // scorro le righe della colonna per trovare
+    // la prima libera, poi ritorno il
+    // // valore
+    // int col = lastMove.j;
+    // if (B.cellState(i, col) == CXCellState.FREE) {
+    // return CELLWEIGHT[i][col];
+    // }
+    // }
+    // return 0;
+    // } else {
+    // valutazione con celle vicine: O(M*N(*K)) ma euristica forte.
+    int score = 0;
+    int rows = B.M;
+    int columns = B.N;
+    CXCellState player = (B.currentPlayer() == 0) ? CXCellState.P1 : CXCellState.P2;
+    CXCellState[][] board = B.getBoard();
+
+    // System.out.println("moves: " + depth);
+    checkTime();
+    // Evaluate rows
+    for (int row = 0; row < rows; row++) {
+      for (int column = 0; column <= columns - B.X; column++) {
+        int countPlayer = 0;
+        int countOpponent = 0;
+
+        for (int k = 0; k < B.X; k++) {
+          CXCellState cell = board[row][column + k];
+          if (cell == player) {
+            countPlayer++;
+          } else if (cell != CXCellState.FREE) {
+            countOpponent++;
+          }
+        }
+        score += evaluateCounts(countPlayer, countOpponent);
+      }
+    }
+    checkTime();
+    // Evaluate columns
+    for (int column = 0; column < columns; column++) {
+      for (int row = 0; row <= rows - B.X; row++) {
+        int countPlayer = 0;
+        int countOpponent = 0;
+
+        for (int k = 0; k < B.X; k++) {
+          CXCellState cell = board[row + k][column];
+          if (cell == player) {
+            countPlayer++;
+          } else if (cell != CXCellState.FREE) {
+            countOpponent++;
+          }
+        }
+        score += evaluateCounts(countPlayer, countOpponent);
+      }
+    }
+
+    checkTime();
+    // Evaluate diagonals (upward)
+    for (int row = 0; row <= rows - B.X; row++) {
+      for (int column = 0; column <= columns - B.X; column++) {
+        int countPlayer = 0;
+        int countOpponent = 0;
+
+        for (int k = 0; k < B.X; k++) {
+          CXCellState cell = board[row + k][column + k];
+          ;
+          if (cell == player) {
+            countPlayer++;
+          } else if (cell != CXCellState.FREE) {
+            countOpponent++;
+          }
+        }
+        score += evaluateCounts(countPlayer, countOpponent);
+      }
+    }
+
+    checkTime();
+    // Evaluate diagonals (downward)
+    for (int row = B.X - 1; row < rows; row++) {
+      for (int column = 0; column <= columns - B.X; column++) {
+        int countPlayer = 0;
+        int countOpponent = 0;
+
+        for (int k = 0; k < B.X; k++) {
+          CXCellState cell = board[row - k][column + k];
+          if (cell == player) {
+            countPlayer++;
+          } else if (cell != CXCellState.FREE) {
+            countOpponent++;
+          }
+        }
+        score += evaluateCounts(countPlayer, countOpponent);
+      }
+    }
+    if (score > BESTMOVETMP) {
+    }
+    return score;
+  }
   // }
 
   public String playerName() {
