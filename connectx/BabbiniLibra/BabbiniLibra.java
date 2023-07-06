@@ -307,7 +307,9 @@ public class BabbiniLibra implements CXPlayer {
       }
     } else {
       // valutazione con celle vicine: O(M*N(*K)) ma euristica forte.
+      return 0;
     }
+    return 0;
   }
 
   // public int nullWindow() {
