@@ -123,11 +123,10 @@ public class BabbiniLibra implements CXPlayer {
   }
 
   private Integer chooseMove(CXBoard B, Integer[] L) throws TimeoutException {
-    int bestScore = -B.N * B.M;
-    int beta = (B.N * B.M - 1 - B.numOfMarkedCells()) / 2;
-    int alpha = -(B.N * B.M - 1 - B.numOfMarkedCells()) / 2;
+    int bestScore = -B.N * B.M -1;
     int move = L[0];
     for (int i : columnOrder) {
+      checkTime();
       if (B.fullColumn(i)) {
         continue;
       }
@@ -137,19 +136,13 @@ public class BabbiniLibra implements CXPlayer {
         B.unmarkColumn();
         return i;
       }
-      int score = -negamax(B, -beta, -alpha);
+      int score = -nullWindow(B);
       B.unmarkColumn();
       if (score > bestScore) {
         bestScore = score;
         move = i;
         BESTMOVETMP = i;
       }
-       if (score >= beta) {
-          return i;
-        }
-        if (score > alpha) {
-          alpha = score;
-        }
       // System.out.println("Column " + i + " Score " + score);
     }
     // System.out.println("Best column " + move + " Best score " + bestScore);
@@ -182,8 +175,7 @@ public class BabbiniLibra implements CXPlayer {
       if (!B.fullColumn(x)) {
         B.markColumn(x);
         int score = -negamax(B, -beta, -alpha); // If current player plays col x, his score will be the opposite of the
-                                                // other
-        // player
+                                                // other player
         B.unmarkColumn();
         if (score >= beta) {
           return score;
@@ -196,46 +188,26 @@ public class BabbiniLibra implements CXPlayer {
     return alpha;
   }
 
-  // private int evaluation(CXBoard B, int col) {
-  //   if (DEPTH < (B.M - B.X)) {
-  //     // valutazione con valore della cella: O(1) ma euristica molto debole. Usata per
-  //     // non appesantire troppo alphabeta da subito
-  //     CXCellState[][] board = B.getBoard();
-  //     int max = 0;
-  //     for (int i = 0; i < B.M; i++) { // scorro le righe della colonna per trovare la prima libera, poi ritorno il
-  //                                     // valore
-  //       if (B.cellState(i, col) == CXCellState.FREE) {
-  //         return CELLWEIGHT[i][col];
-  //       }
-  //     }
-  //   } else {
-  //     // valutazione con celle vicine: O(M*N(*K)) ma euristica forte.
-  //   }
-  // }
-
-  // public int nullWindow() {
-  // int min = -(Position::WIDTH * Position::HEIGHT - P.nbMoves()) / 2;
-  // int max = (Position::WIDTH * Position::HEIGHT + 1 - P.nbMoves()) / 2;
-  // if (weak) {
-  // min = -1;
-  // max = 1;
-  // }
-  // while (min < max) { // iteratively narrow the min-max exploration window
-  // int med = min + (max - min) / 2;
-  // if (med <= 0 && min / 2 < med)
-  // med = min / 2;
-  // else if (med >= 0 && max / 2 > med)
-  // med = max / 2;
-  // int r = negamax(P, med, med + 1); // use a null depth window to know if the
-  // actual score is greater or smaller
-  // // than med
-  // if (r <= med)
-  // max = r;
-  // else
-  // min = r;
-  // }
-  // return min;
-  // }
+  public int nullWindow(CXBoard B) {
+    int min = -(B.N * B.M - B.numOfMarkedCells()) / 2;
+    int max = (B.N * B.M + 1 - B.numOfMarkedCells()) / 2;
+    while (min < max) { // iteratively narrow the min-max exploration window
+      int med = min + (max - min) / 2;
+      if (med <= 0 && min / 2 < med)
+        med = min / 2;
+      else if (med >= 0 && max / 2 > med)
+        med = max / 2;
+      int r = negamax(B, med, med + 1); // use a null depth window to know if the
+      // actual score is greater or smaller
+      // than med
+      if (r <= med) {
+        max = r;
+      } else {
+        min = r;
+      }
+    }
+    return min;
+  }
 
   public String playerName() {
     return "Babbini-Libra";
