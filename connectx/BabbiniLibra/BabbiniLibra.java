@@ -295,20 +295,22 @@ public class BabbiniLibra implements CXPlayer {
     }
   }
 
-  private int evaluation(CXBoard B, int col) {
-    if (DEPTH < (B.M - B.X)) {
-      //valutazione con valore della cella: O(1) ma euristica molto debole. Usata per non appesantire troppo alphabeta da subito
-      CXCellState[][] board = B.getBoard();
-      int max = 0;
-      for (int i=0; i<B.M; i++) { //scorro le righe della colonna per trovare la prima libera, poi ritorno il valore
-        if (B.cellState(i, col) == CXCellState.FREE){
-          return CELLWEIGHT[i][col];
-        }
-      }
-    } else {
-      // valutazione con celle vicine: O(M*N(*K)) ma euristica forte.
-    }
-  }
+  // private int evaluation(CXBoard B, int col) {
+  //   if (DEPTH < (B.M - B.X)) {
+  //     // valutazione con valore della cella: O(1) ma euristica molto debole. Usata per
+  //     // non appesantire troppo alphabeta da subito
+  //     CXCellState[][] board = B.getBoard();
+  //     int max = 0;
+  //     for (int i = 0; i < B.M; i++) { // scorro le righe della colonna per trovare la prima libera, poi ritorno il
+  //                                     // valore
+  //       if (B.cellState(i, col) == CXCellState.FREE) {
+  //         return CELLWEIGHT[i][col];
+  //       }
+  //     }
+  //   } else {
+  //     // valutazione con celle vicine: O(M*N(*K)) ma euristica forte.
+  //   }
+  // }
 
   // public int nullWindow() {
   // int min = -(Position::WIDTH * Position::HEIGHT - P.nbMoves()) / 2;
