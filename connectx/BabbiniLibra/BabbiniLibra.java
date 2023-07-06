@@ -83,12 +83,6 @@ public class BabbiniLibra implements CXPlayer {
                                                                                      // (valori negativi)
       }
     }
-    for (int i = 0; i < M; i++) {
-      for (int j = 0; j < N; j++) {
-        System.out.print(CELLWEIGHT[i][j] + "\t");
-      }
-      System.out.println();
-    }
     // inizializzo columnOrder
     for (int i = 0; i < N; i++) {
       columnOrder[i] = N / 2 + (1 - 2 * (i % 2)) * (i + 1) / 2;
@@ -99,7 +93,6 @@ public class BabbiniLibra implements CXPlayer {
     long time = System.currentTimeMillis() - START;
     if ((time / 1000) >= TIMEOUT * (90.0 / 100.0)) {
 
-      System.out.println("time: " + time);
       throw new TimeoutException();
     }
 
@@ -130,169 +123,77 @@ public class BabbiniLibra implements CXPlayer {
   }
 
   private Integer chooseMove(CXBoard B, Integer[] L) throws TimeoutException {
-    int bestScore = -1_000_000; // one million
-    int alpha = -1_000_000;
-    int beta = 1_000_000;
+    int bestScore = -B.N * B.M;
+    int beta = (B.N * B.M - 1 - B.numOfMarkedCells()) / 2;
+    int alpha = -(B.N * B.M - 1 - B.numOfMarkedCells()) / 2;
     int move = L[0];
     for (int i : columnOrder) {
       if (B.fullColumn(i)) {
         continue;
       }
-      checkTime();
-      int score;
-      CXGameState result = B.markColumn(i);
-      if (result == myWin) {
-        score = (B.M * B.N - 1 - DEPTH / 2);
-      } else if (result == CXGameState.DRAW) {
-        score = 0;
-      } else {
-        score = abprouningCount(B, false, alpha, beta);
+      // checkTime();
+      CXGameState state = B.markColumn(i);
+      if (state == myWin) {
+        B.unmarkColumn();
+        return i;
       }
-      alpha = Math.max(alpha, score);
-      if (bestScore < score) {
+      int score = -negamax(B, -beta, -alpha);
+      B.unmarkColumn();
+      if (score > bestScore) {
         bestScore = score;
         move = i;
         BESTMOVETMP = i;
       }
-      B.unmarkColumn();
-      if (beta <= alpha) {
-        break;
-      }
+       if (score >= beta) {
+          return i;
+        }
+        if (score > alpha) {
+          alpha = score;
+        }
+      // System.out.println("Column " + i + " Score " + score);
     }
+    // System.out.println("Best column " + move + " Best score " + bestScore);
+    // System.out.println();
     return move;
   }
 
-  private int abprouning(CXBoard B, boolean maximizer, int alpha, int beta) throws TimeoutException {
-    checkTime();
-    if (maximizer) {
-      checkTime();
-      int maxScore = -1_000_000;
-      int hash = B.getBoard().hashCode();
-      if (transpositionTable.containsKey(hash)) { // se mossa già nella transpositionTable la guardo da qui, altrimenti
-                                                  // eseguo l'alphabeta
-        return transpositionTable.get(hash);
-      }
-      for (int i : columnOrder) {
-        checkTime();
-        if (B.fullColumn(i)) {
-          continue;
-        }
-        int score;
-        CXGameState result = B.markColumn(i);
-        if (result == myWin) {
-          score = 1_000_000;
-        } else if (result == yourWin) {
-          score = -1_000_000;
-        } else if (result == CXGameState.DRAW) {
-          score = 0;
-        } else { // OPEN Board
-          score = this.abprouning(B, false, alpha, beta);
-        }
-        maxScore = Math.max(maxScore, score);
-        alpha = Math.max(alpha, maxScore);
-        B.unmarkColumn();
-        if (beta <= alpha) {
-          break;
-        }
-      }
-      transpositionTable.put(hash, maxScore);
-      return maxScore;
-    } else {
-      checkTime();
-      // minimizer
-      int minScore = B.N * B.M;
-      for (int i : columnOrder) {
-        checkTime();
-        if (B.fullColumn(i)) {
-          continue;
-        }
-        int score;
-        CXGameState result = B.markColumn(i);
-        if (result == myWin) {
-          score = 1_000_000;
-        } else if (result == yourWin) {
-          score = -1_000_000;
-        } else if (result == CXGameState.DRAW) {
-          score = 0;
-        } else {
-          score = this.abprouning(B, true, alpha, beta);
-        }
-        minScore = Math.min(minScore, score);
-        beta = Math.min(score, beta);
-        B.unmarkColumn();
-        if (beta <= alpha) {
-          break;
-        }
-      }
-      return minScore;
+  private int negamax(CXBoard B, int alpha, int beta) {
+    CXGameState state = B.gameState();
+    if (state == CXGameState.DRAW) { // check for draw game
+      return 0;
     }
-  }
-
-  private int abprouningCount(CXBoard B, boolean maximizer, int alpha, int beta) throws TimeoutException {
-    if (maximizer) {
-      checkTime();
-      int maxScore = -B.N * B.M;
-      int hash = B.getBoard().hashCode();
-      if (transpositionTable.containsKey(hash)) { // se mossa già nella transpositionTable la guardo da qui, altrimenti
-                                                  // eseguo l'alphabeta
-        return transpositionTable.get(hash);
-      }
-      for (int i : columnOrder) {
-        checkTime();
-        if (B.fullColumn(i)) {
-          continue;
-        }
-        int score;
-        CXGameState result = B.markColumn(i);
-        DEPTH++;
-        if (result == myWin) {
-          score = (B.M * B.N - 1 - DEPTH / 2);
-        } else if (result == CXGameState.DRAW) {
-          score = 0;
-        } else { // OPEN Board
-          score = this.abprouning(B, false, alpha, beta);
-        }
-        if (score > 0) {
-          maxScore = Math.min(maxScore, score);
-        } else {
-          maxScore = Math.max(maxScore, score);
-        }
-        alpha = Math.max(alpha, maxScore);
-        DEPTH--;
+    for (int x : columnOrder) { // check if current player can win next move
+      if (!B.fullColumn(x)) {
+        CXGameState move = B.markColumn(x);
         B.unmarkColumn();
-        if (beta <= alpha) {
-          break;
+        if (move == myWin || move == yourWin) {
+          return (B.N * B.M + 1 - B.numOfMarkedCells()) / 2;
         }
       }
-      transpositionTable.put(hash, maxScore);
-      return maxScore;
-    } else {
-      checkTime();
-      // minimizer
-      int minScore = B.N * B.M;
-      for (int i : columnOrder) {
-        checkTime();
-        if (B.fullColumn(i)) {
-          continue;
-        }
-        int score;
-        CXGameState result = B.markColumn(i);
-        if (result == yourWin) {
-          score = -(B.M * B.N - 1 - DEPTH / 2);
-        } else if (result == CXGameState.DRAW) {
-          score = 0;
-        } else {
-          score = this.abprouning(B, true, alpha, beta);
-        }
-        minScore = Math.min(minScore, score);
-        beta = Math.min(score, beta);
-        B.unmarkColumn();
-        if (beta <= alpha) {
-          break;
-        }
-      }
-      return minScore;
     }
+    int max = (B.N * B.M - 1 - B.numOfMarkedCells()) / 2;
+    if (beta > max) {
+      beta = max;
+      if (alpha >= beta) {
+        return beta;
+      }
+    }
+    for (int x = 0; x < B.N; x++) { // compute the score of all possible next move and keep the best one
+      if (!B.fullColumn(x)) {
+        B.markColumn(x);
+        int score = -negamax(B, -beta, -alpha); // If current player plays col x, his score will be the opposite of the
+                                                // other
+        // player
+        B.unmarkColumn();
+        if (score >= beta) {
+          return score;
+        }
+        if (score > alpha) {
+          alpha = score;
+        }
+      }
+    }
+    return alpha;
   }
 
   // private int evaluation(CXBoard B, int col) {
