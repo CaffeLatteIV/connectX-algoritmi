@@ -28,5 +28,13 @@
       "projectName": "",
       "args": "3 3 3 connectx.BabbiniLibra.CCC"
     },
+    {
+      "type": "java",
+      "name": "444CCC",
+      "request": "launch",
+      "mainClass": "connectx.CXGame",
+      "projectName": "",
+      "args": "4 4 4 connectx.BabbiniLibra.CCC"
+    },
   ]
 }
