@@ -51,6 +51,7 @@ public class BabbiniLibra implements CXPlayer {
   private int DEPTH;
   private HashMap<Integer, Integer> transpositionTable;
   private Integer[][] CELLWEIGHT;
+  private int MINSCORE;
 
   /* Default empty constructor */
   public BabbiniLibra() {
@@ -66,8 +67,9 @@ public class BabbiniLibra implements CXPlayer {
     DEPTH = 0;
     TOTALTIME = 0;
     columnOrder = new Integer[N];
-    transpositionTable = new HashMap<>();
+    transpositionTable = new HashMap<>(N * M);
     CELLWEIGHT = new Integer[M][N];
+    MINSCORE = -(N * M) / 2 + K-1;
 
     // inizializzo CELLWEIGHT con valori più alti quanto più si è al centro
     int centerR = N / 2;
@@ -123,7 +125,7 @@ public class BabbiniLibra implements CXPlayer {
   }
 
   private Integer chooseMove(CXBoard B, Integer[] L) throws TimeoutException {
-    int bestScore = -B.N * B.M -1;
+    int bestScore = -B.N * B.M - 1;
     int move = L[0];
     for (int i : columnOrder) {
       checkTime();
@@ -151,11 +153,12 @@ public class BabbiniLibra implements CXPlayer {
   }
 
   private int negamax(CXBoard B, int alpha, int beta) {
+    int boardHashCode = Arrays.deepHashCode(B.getBoard());
     CXGameState state = B.gameState();
     if (state == CXGameState.DRAW) { // check for draw game
       return 0;
     }
-    for (int x : columnOrder) { // check if current player can win next move
+    for (int x : columnOrder) {  // check if current player can win next move
       if (!B.fullColumn(x)) {
         CXGameState move = B.markColumn(x);
         B.unmarkColumn();
@@ -165,6 +168,10 @@ public class BabbiniLibra implements CXPlayer {
       }
     }
     int max = (B.N * B.M - 1 - B.numOfMarkedCells()) / 2;
+    if (transpositionTable.containsKey(boardHashCode)) {
+      int val = transpositionTable.get(boardHashCode);
+      max = val + MINSCORE - 1;
+    }
     if (beta > max) {
       beta = max;
       if (alpha >= beta) {
@@ -185,6 +192,7 @@ public class BabbiniLibra implements CXPlayer {
         }
       }
     }
+    transpositionTable.put(boardHashCode, alpha - MINSCORE + 1);
     return alpha;
   }
 
