@@ -57,9 +57,9 @@ public class CXPlayerTester {
 	private static CXPlayer[] Player = new CXPlayer[2];
 
 	/** Scoring system */
-	private static int WINSCORE  = 3;
+	private static int WINSCORE = 3;
 	private static int DRAWSCORE = 1;
-	private static int ERRSCORE  = 3;
+	private static int ERRSCORE = 3;
 
 	private enum GameState {
 		WINP1, WINP2, DRAW, ERRP1, ERRP2, EP1EX, EP2EX;
@@ -123,7 +123,7 @@ public class CXPlayerTester {
 		while (B.gameState() == CXGameState.OPEN) {
 			int curr = B.currentPlayer();
 			final ExecutorService executor = Executors.newSingleThreadExecutor();
-			final Future<Integer> task     = executor.submit(new StoppablePlayer(Player[curr], B.copy()));
+			final Future<Integer> task = executor.submit(new StoppablePlayer(Player[curr], B.copy()));
 			executor.shutdown(); // Makes the ExecutorService stop accepting new tasks
 
 			Integer c = null;
@@ -207,40 +207,40 @@ public class CXPlayerTester {
 		List<String> L = new ArrayList<String>();
 		for (int i = 0; i < args.length; i++) {
 			switch (args[i].charAt(0)) {
-			case '-':
-				char c = (args[i].length() != 2 ? 'x' : args[i].charAt(1));
-				switch (c) {
-				case 't':
-					if (args.length < i + 2)
-						throw new IllegalArgumentException("Expected parameter after " + args[i]);
+				case '-':
+					char c = (args[i].length() != 2 ? 'x' : args[i].charAt(1));
+					switch (c) {
+						case 't':
+							if (args.length < i + 2)
+								throw new IllegalArgumentException("Expected parameter after " + args[i]);
 
-					try {
-						TIMEOUT = Integer.parseInt(args[++i]);
-					} catch (NumberFormatException e) {
-						throw new IllegalArgumentException(
-								"Illegal integer format for " + args[i - 1] + " argument: " + args[i]);
-					}
-					break;
-				case 'r':
-					if (args.length < i + 2)
-						throw new IllegalArgumentException("Expected parameter after " + args[i]);
+							try {
+								TIMEOUT = Integer.parseInt(args[++i]);
+							} catch (NumberFormatException e) {
+								throw new IllegalArgumentException(
+										"Illegal integer format for " + args[i - 1] + " argument: " + args[i]);
+							}
+							break;
+						case 'r':
+							if (args.length < i + 2)
+								throw new IllegalArgumentException("Expected parameter after " + args[i]);
 
-					try {
-						ROUNDS = Integer.parseInt(args[++i]);
-					} catch (NumberFormatException e) {
-						throw new IllegalArgumentException(
-								"Illegal integer format for " + args[i - 1] + " argument: " + args[i]);
+							try {
+								ROUNDS = Integer.parseInt(args[++i]);
+							} catch (NumberFormatException e) {
+								throw new IllegalArgumentException(
+										"Illegal integer format for " + args[i - 1] + " argument: " + args[i]);
+							}
+							break;
+						case 'v':
+							VERBOSE = true;
+							break;
+						default:
+							throw new IllegalArgumentException("Illegal argument:  " + args[i]);
 					}
-					break;
-				case 'v':
-					VERBOSE = true;
 					break;
 				default:
-					throw new IllegalArgumentException("Illegal argument:  " + args[i]);
-				}
-				break;
-			default:
-				L.add(args[i]);
+					L.add(args[i]);
 			}
 		}
 
@@ -260,9 +260,8 @@ public class CXPlayerTester {
 			throw new IllegalArgumentException("Illegal integer format for N argument: " + N);
 		}
 		try {
-			X  = Integer.parseInt(L.get(2));
-		}
-		catch(NumberFormatException e) {
+			X = Integer.parseInt(L.get(2));
+		} catch (NumberFormatException e) {
 			throw new IllegalArgumentException("Illegal integer format for N argument: " + X);
 		}
 
@@ -297,10 +296,10 @@ public class CXPlayerTester {
 	}
 
 	public static void main(String[] args) {
-		int P1SCORE  = 0;
-		int P2SCORE  = 0;
-		int[] STATP1 = new int[3];      
-    int[] STATP2 = new int[3];
+		int P1SCORE = 0;
+		int P2SCORE = 0;
+		int[] STATP1 = new int[3];
+		int[] STATP2 = new int[3];
 
 		if (args.length == 0) {
 			printUsage();
@@ -322,36 +321,49 @@ public class CXPlayerTester {
 			System.out.println("Timeout   : " + TIMEOUT + " secs\n\n");
 		}
 
-		boolean stop = false; 
+		boolean stop = false;
+		long avg = 0L;
+		long start = System.currentTimeMillis();
 		for (int i = 1; i <= ROUNDS && !stop; i++) {
 			if (VERBOSE)
 				System.out.println("\n**** ROUND " + i + " ****");
 			initGame();
 			GameState state = runGame();
+			// System.out.println(end);
 
 			switch (state) {
-			case WINP1:
-				P1SCORE += WINSCORE;  STATP1[0]++;
-				break;
-			case WINP2:
-				P2SCORE += WINSCORE;  STATP2[0]++;
-				break;
-			case ERRP1:
-				P2SCORE += ERRSCORE;  STATP1[2]++;
-				break;
-			case ERRP2:
-				P1SCORE += ERRSCORE;  STATP2[2]++;
-				break;
-			case EP1EX:
-				P2SCORE += ERRSCORE;  STATP1[2]++; stop=true; 
-				break;
-			case EP2EX:
-				P1SCORE += ERRSCORE;  STATP2[2]++; stop=true;
-				break;
-			case DRAW:
-				P1SCORE += DRAWSCORE; STATP1[1]++;
-				P2SCORE += DRAWSCORE; STATP2[1]++;
-				break;
+				case WINP1:
+					P1SCORE += WINSCORE;
+					STATP1[0]++;
+					break;
+				case WINP2:
+					P2SCORE += WINSCORE;
+					STATP2[0]++;
+					break;
+				case ERRP1:
+					P2SCORE += ERRSCORE;
+					STATP1[2]++;
+					break;
+				case ERRP2:
+					P1SCORE += ERRSCORE;
+					STATP2[2]++;
+					break;
+				case EP1EX:
+					P2SCORE += ERRSCORE;
+					STATP1[2]++;
+					stop = true;
+					break;
+				case EP2EX:
+					P1SCORE += ERRSCORE;
+					STATP2[2]++;
+					stop = true;
+					break;
+				case DRAW:
+					P1SCORE += DRAWSCORE;
+					STATP1[1]++;
+					P2SCORE += DRAWSCORE;
+					STATP2[1]++;
+					break;
 			}
 			if (VERBOSE) {
 				System.out.println("\nGame state    : " + state);
@@ -359,11 +371,17 @@ public class CXPlayerTester {
 						+ Player[1].playerName() + " (" + P2SCORE + ")");
 			}
 		}
+		long end = System.currentTimeMillis() - start;
+		avg = end/ROUNDS;
+		System.out.println("Avg time per game " + avg);
+
 		if (VERBOSE)
 			System.out.println("\n**** FINAL SCORE ****");
-		System.out.println(Player[0].playerName() + " Score: " + P1SCORE + " Won: " + STATP1[0] + " Lost: " + STATP2[0] + " Draw: " + STATP1[1] + " Error: " + STATP1[2]);
-		System.out.println(Player[1].playerName() + " Score: " + P2SCORE + " Won: " + STATP2[0] + " Lost: " + STATP1[0] + " Draw: " + STATP2[1] + " Error: " + STATP2[2]); 
-		
+			System.out.println(Player[0].playerName() + " Score: " + P1SCORE + " Won: " + STATP1[0] + " Lost: " + STATP2[0]
+				+ " Draw: " + STATP1[1] + " Error: " + STATP1[2]);
+			System.out.println(Player[1].playerName() + " Score: " + P2SCORE + " Won: " + STATP2[0] + " Lost: " + STATP1[0]
+				+ " Draw: " + STATP2[1] + " Error: " + STATP2[2]);
+
 		System.exit(0);
 	}
 
