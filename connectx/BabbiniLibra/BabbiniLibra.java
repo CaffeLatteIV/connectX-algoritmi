@@ -100,6 +100,7 @@ public class BabbiniLibra implements CXPlayer {
     START = System.currentTimeMillis(); // Save starting time
     Integer[] L = columnOrder;
     int i = 0;
+    // prima colonna libera (tra quelle ordinate dal centro verso l'esterno)
     while (B.fullColumn(L[i])) {
       i++;
     }
@@ -110,7 +111,6 @@ public class BabbiniLibra implements CXPlayer {
       B.markColumn(move);
       return move;
     } catch (TimeoutException e) {
-      System.out.println("timeout. moves: " + (B.N * B.M - 1 - B.numOfMarkedCells()) / 2);
       return BESTMOVETMP;
     }
 
