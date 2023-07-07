@@ -23,14 +23,8 @@ import connectx.CXBoard;
 import connectx.CXCell;
 import connectx.CXCellState;
 import connectx.CXGameState;
-import java.util.Random;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.concurrent.TimeoutException;
 
-import javax.swing.text.Position;
 
 /**
  * Software player only a bit smarter than random.
@@ -40,14 +34,12 @@ import javax.swing.text.Position;
  * </p>
  */
 public class BabbiniLibra implements CXPlayer {
-  private Random rand;
   private CXGameState myWin;
   private CXGameState yourWin;
   private int TIMEOUT;
   private long START;
   private Integer[] columnOrder;
   private int BESTMOVETMP;
-  private HashMap<Integer, Integer> transpositionTable;
   int desiredDepth;
 
   /* Default empty constructor */
@@ -56,12 +48,10 @@ public class BabbiniLibra implements CXPlayer {
 
   public void initPlayer(int M, int N, int K, boolean first, int timeout_in_secs) {
     // New random seed for each game
-    rand = new Random(System.currentTimeMillis());
     myWin = first ? CXGameState.WINP1 : CXGameState.WINP2;
     yourWin = first ? CXGameState.WINP2 : CXGameState.WINP1;
     TIMEOUT = timeout_in_secs;
     columnOrder = new Integer[N];
-    transpositionTable = new HashMap<>();
 
     // inizializzo desiredDepth
     int dim = Math.max(M, N);
