@@ -127,9 +127,9 @@ public class BabbiniLibra implements CXPlayer {
   }
 
   private Integer chooseMove(CXBoard B, Integer[] L) throws TimeoutException {
-    int bestScore = -B.N * B.M;
-    int beta = (B.N * B.M - 1 - B.numOfMarkedCells()) / 2;
-    int alpha = -(B.N * B.M - 1 - B.numOfMarkedCells()) / 2;
+    int bestScore = -10000000;
+    int alpha = -10000000;
+    int beta = 10000000;
     int move = L[0];
     for (int i : columnOrder) {
       checkTime();
@@ -142,23 +142,82 @@ public class BabbiniLibra implements CXPlayer {
         B.unmarkColumn();
         return i;
       }
-
-      int score = -negamax(B, -beta, -alpha, desiredDepth);
+      int score = abprouning(B, false, alpha, beta, desiredDepth);
       B.unmarkColumn();
       if (score > bestScore) {
         bestScore = score;
         move = i;
         BESTMOVETMP = i;
       }
-      if (score >= beta) {
-        return i;
+      if (beta <= alpha) {
+        break;
       }
-      if (score > alpha) {
-        alpha = score;
+      alpha = Math.max(alpha, bestScore);
+    }
+    return move;
+  }
+
+  private int abprouning(CXBoard B, boolean isMaximizer, int alpha, int beta, int depth) throws TimeoutException {
+    checkTime();
+    if (isMaximizer) {
+      int bestScore = -10_000_000;
+
+      for (int x : columnOrder) {
+        if (B.fullColumn(x)) {
+          continue;
+        }
+        int score;
+        // if (move.state == MNKCellState.FREE) {
+        CXGameState status = B.markColumn(x);
+        if (status == myWin) {
+          score = 1;
+        } else if (status == CXGameState.DRAW) {
+          score = 0;
+        } else {
+          score = abprouning(B, false, alpha, beta, depth + 1);
+        }
+        B.unmarkColumn();
+        bestScore = Math.max(score, bestScore);
+        alpha = Math.max(alpha, bestScore);
+        // in questo ramo viene scelta la mossa con punteggio più alto
+        // quindi se nel turno prima (quello del minimizer)
+        // il valore minimo già trovato (beta) è inferiore ad alpha appena calcolato
+        // posso subito scartare gli altri rami a questo livello
+        if (beta <= alpha) {
+          break;
+        }
       }
+      return bestScore;
+    } else {
+      int bestScore = 1000;
+      for (int x : columnOrder) {
+        if (B.fullColumn(x)) {
+          continue;
+        }
+        int score;
+        // if (move.state == MNKCellState.FREE) {
+        CXGameState status = B.markColumn(x);
+        if (status == yourWin) {
+          score = -1;
+        } else if (status == CXGameState.DRAW) {
+          score = 0;
+        } else {
+          score = abprouning(B, true, alpha, beta, depth + 1);
+        }
+        B.unmarkColumn();
+        bestScore = Math.min(score, bestScore);
+        beta = Math.min(beta, bestScore);
+        // in questo ramo viene scelta la mossa con punteggio più basso
+        // quindi se nel turno prima (quello del maximizer)
+        // il valore massimo già trovato (alpha) è maggiore di beta appena calcolato
+        // posso subito scartare gli altri rami a questo livello
+        if (beta <= alpha) {
+          break;
+        }
+      }
+      return bestScore;
     }
 
-    return move;
   }
 
   private int negamax(CXBoard B, int alpha, int beta, int depth) throws TimeoutException {
@@ -186,15 +245,16 @@ public class BabbiniLibra implements CXPlayer {
     }
 
     if (depth <= 0) {
-      return evaluation(B, B.getLastMove(), depth); //heuristic evaluation of the open board
+      return evaluation(B, B.getLastMove(), depth); // heuristic evaluation of the open board
     }
 
     for (int x = 0; x < B.N; x++) { // compute the score of all possible next move and keep the best one
       checkTime();
       if (!B.fullColumn(x)) {
         B.markColumn(x);
-        // If current player plays col x, his score will be the opposite of the other  player
-        int score = -negamax(B, -beta, -alpha, depth - 1); 
+        // If current player plays col x, his score will be the opposite of the other
+        // player
+        int score = -negamax(B, -beta, -alpha, depth - 1);
         B.unmarkColumn();
         if (score >= beta) {
           return score;
@@ -231,7 +291,7 @@ public class BabbiniLibra implements CXPlayer {
     }
   }
 
-  private int evaluation(CXBoard B, CXCell lastMove, int depth) throws TimeoutException {    
+  private int evaluation(CXBoard B, CXCell lastMove, int depth) throws TimeoutException {
     int score = 0;
     int rows = B.M;
     int columns = B.N;
