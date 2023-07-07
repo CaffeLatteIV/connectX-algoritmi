@@ -126,7 +126,6 @@ public class BabbiniLibra implements CXPlayer {
       if (B.fullColumn(i)) {
         continue;
       }
-      // checkTime();
       CXGameState state = B.markColumn(i);
       if (state == myWin) {
         B.unmarkColumn();
@@ -183,7 +182,7 @@ public class BabbiniLibra implements CXPlayer {
       checkTime();
       if (!B.fullColumn(x)) {
         B.markColumn(x);
-        // If current player plays col x, his score will be the opposite of the other  player
+        // If current player plays col x, his score will be the opposite of the other player
         int score = -negamax(B, -beta, -alpha, depth - 1); 
         B.unmarkColumn();
         if (score >= beta) {
