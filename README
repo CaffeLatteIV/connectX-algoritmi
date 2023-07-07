@@ -30,3 +30,17 @@ CXPlayerTester application:
 - Verbose output and customized timeout (1 sec) and number of game repetitions (10 rounds)
 
 	java -cp ".." connectx.CXPlayerTester 6 7 4 connectx.L0.L0 connectx.L1.L1 -v -t 1 -r 10
+
+
+Player 1 (Babbini-Libra) -> [3,2]
+Player 2 (L1) -> [3,0]
+Player 1 (Babbini-Libra) -> [3,3]
+Player 2 (L1) -> [3,1]
+Player 1 (Babbini-Libra) -> [2,2]
+Player 2 (L1) -> [1,2]
+Player 1 (Babbini-Libra) -> [0,2]
+Player 2 (L1) -> [2,1]
+Player 1 (Babbini-Libra) -> [1,1]
+Player 2 (L1) -> [0,1]
+Player 1 (Babbini-Libra) -> [2,0]
+Player 2 (L1) -> [2,3]

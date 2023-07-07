@@ -127,13 +127,18 @@ public class BabbiniLibra implements CXPlayer {
   }
 
   private Integer chooseMove(CXBoard B, Integer[] L) throws TimeoutException {
-    int bestScore = -10000000;
-    int alpha = -10000000;
-    int beta = 10000000;
-    int move = L[0];
-    for (int i : columnOrder) {
+    int bestScore = -1_000_000_000;
+    int alpha = -1_000_000_000;
+    int beta = 1_000_000_000;
+    int move =0;
+     while (B.fullColumn(L[move])) {
+      move++;
+    }
+    move = L[move];
+    for (int i : L) {
       checkTime();
       if (B.fullColumn(i)) {
+        System.out.println(i + " full");
         continue;
       }
       // checkTime();
@@ -149,32 +154,42 @@ public class BabbiniLibra implements CXPlayer {
         move = i;
         BESTMOVETMP = i;
       }
+      alpha = Math.max(alpha, bestScore);
       if (beta <= alpha) {
         break;
       }
-      alpha = Math.max(alpha, bestScore);
+      System.out.println("Move " + i + " score " + score);
     }
+    System.out.println("best move " + move + " score " + bestScore);
+    System.out.println();
     return move;
   }
 
   private int abprouning(CXBoard B, boolean isMaximizer, int alpha, int beta, int depth) throws TimeoutException {
     checkTime();
+    if (depth <= 0) {
+    return evaluation(B, B.getLastMove(), depth); // heuristic evaluation of the
+    // open board
+    }
     if (isMaximizer) {
-      int bestScore = -10_000_000;
+      int bestScore = -1_000_000_000;
 
+      int hashBoard = Arrays.deepHashCode(B.getBoard());
+      if (transpositionTable.containsKey(hashBoard)) {
+        bestScore = transpositionTable.get(hashBoard);
+      }
       for (int x : columnOrder) {
         if (B.fullColumn(x)) {
           continue;
         }
         int score;
-        // if (move.state == MNKCellState.FREE) {
         CXGameState status = B.markColumn(x);
         if (status == myWin) {
-          score = 1;
+          score = 1_000_000_000;
         } else if (status == CXGameState.DRAW) {
           score = 0;
         } else {
-          score = abprouning(B, false, alpha, beta, depth + 1);
+          score = abprouning(B, false, alpha, beta, depth - 1);
         }
         B.unmarkColumn();
         bestScore = Math.max(score, bestScore);
@@ -187,22 +202,22 @@ public class BabbiniLibra implements CXPlayer {
           break;
         }
       }
+      transpositionTable.put(hashBoard, bestScore);
       return bestScore;
-    } else {
-      int bestScore = 1000;
+    } else { // minimizer
+      int bestScore = 1_000_000_000;
       for (int x : columnOrder) {
         if (B.fullColumn(x)) {
           continue;
         }
         int score;
-        // if (move.state == MNKCellState.FREE) {
         CXGameState status = B.markColumn(x);
         if (status == yourWin) {
-          score = -1;
+          score = -1_000_000_000;
         } else if (status == CXGameState.DRAW) {
           score = 0;
         } else {
-          score = abprouning(B, true, alpha, beta, depth + 1);
+          score = abprouning(B, true, alpha, beta, depth - 1);
         }
         B.unmarkColumn();
         bestScore = Math.min(score, bestScore);
@@ -218,53 +233,6 @@ public class BabbiniLibra implements CXPlayer {
       return bestScore;
     }
 
-  }
-
-  private int negamax(CXBoard B, int alpha, int beta, int depth) throws TimeoutException {
-    CXGameState state = B.gameState();
-
-    if (state == CXGameState.DRAW) { // check for draw game
-      return 0;
-    }
-    for (int x : columnOrder) { // check if current player can win next move
-      checkTime();
-      if (!B.fullColumn(x)) {
-        CXGameState move = B.markColumn(x);
-        B.unmarkColumn();
-        if (move == myWin || move == yourWin) {
-          return (B.N * B.M + 1 - B.numOfMarkedCells()) / 2;
-        }
-      }
-    }
-    int max = (B.N * B.M - 1 - B.numOfMarkedCells()) / 2;
-    if (beta > max) {
-      beta = max;
-      if (alpha >= beta) {
-        return beta;
-      }
-    }
-
-    if (depth <= 0) {
-      return evaluation(B, B.getLastMove(), depth); // heuristic evaluation of the open board
-    }
-
-    for (int x = 0; x < B.N; x++) { // compute the score of all possible next move and keep the best one
-      checkTime();
-      if (!B.fullColumn(x)) {
-        B.markColumn(x);
-        // If current player plays col x, his score will be the opposite of the other
-        // player
-        int score = -negamax(B, -beta, -alpha, depth - 1);
-        B.unmarkColumn();
-        if (score >= beta) {
-          return score;
-        }
-        if (score > alpha) {
-          alpha = score;
-        }
-      }
-    }
-    return alpha;
   }
 
   private int evaluateCounts(int countPlayer, int countOpponent) {
