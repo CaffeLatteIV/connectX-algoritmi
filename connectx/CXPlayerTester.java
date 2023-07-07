@@ -329,6 +329,9 @@ public class CXPlayerTester {
 				System.out.println("\n**** ROUND " + i + " ****");
 			initGame();
 			GameState state = runGame();
+			// if (state == GameState.WINP2) {
+			// 	break;
+			// }
 			// System.out.println(end);
 
 			switch (state) {

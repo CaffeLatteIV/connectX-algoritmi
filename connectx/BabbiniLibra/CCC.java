@@ -38,7 +38,7 @@ import javax.swing.text.Position;
  * randomly.
  * </p>
  */
-public class BabbiniLibra implements CXPlayer {
+public class CCC implements CXPlayer {
   private Random rand;
   private CXGameState myWin;
   private CXGameState yourWin;
@@ -49,12 +49,11 @@ public class BabbiniLibra implements CXPlayer {
   private Integer[] columnOrder;
   private int BESTMOVETMP;
   private int DEPTH;
-  private HashMap<Integer, Integer> transpositionTable;
   private Integer[][] CELLWEIGHT;
   private int MINSCORE;
 
   /* Default empty constructor */
-  public BabbiniLibra() {
+  public CCC() {
   }
 
   public void initPlayer(int M, int N, int K, boolean first, int timeout_in_secs) {
@@ -67,7 +66,6 @@ public class BabbiniLibra implements CXPlayer {
     DEPTH = 0;
     TOTALTIME = 0;
     columnOrder = new Integer[N];
-    transpositionTable = new HashMap<>(N * M);
     CELLWEIGHT = new Integer[M][N];
     MINSCORE = -(N * M) / 2 + 3;
 
@@ -157,7 +155,7 @@ public class BabbiniLibra implements CXPlayer {
     if (state == CXGameState.DRAW) { // check for draw game
       return 0;
     }
-    for (int x=0; x < B.N; x++) {  // check if current player can win next move
+    for (int x : columnOrder) {  // check if current player can win next move
       if (!B.fullColumn(x)) {
         CXGameState move = B.markColumn(x);
         B.unmarkColumn();
@@ -166,20 +164,14 @@ public class BabbiniLibra implements CXPlayer {
         }
       }
     }
-    int boardHashCode = Arrays.deepHashCode(B.getBoard());
     int max = (B.N * B.M - 1 - B.numOfMarkedCells()) / 2;
-    if (transpositionTable.containsKey(boardHashCode)) {
-      int val = transpositionTable.get(boardHashCode);
-      max = val + MINSCORE -1 ;
-      // max = val;
-    }
     if (beta > max) {
       beta = max;
       if (alpha >= beta) {
         return beta;
       }
     }
-    for (int x : columnOrder) { // compute the score of all possible next move and keep the best one
+    for (int x = 0; x < B.N; x++) { // compute the score of all possible next move and keep the best one
       if (!B.fullColumn(x)) {
         B.markColumn(x);
         int score = -negamax(B, -beta, -alpha); // If current player plays col x, his score will be the opposite of the
@@ -193,8 +185,6 @@ public class BabbiniLibra implements CXPlayer {
         }
       }
     }
-    // transpositionTable.put(boardHashCode, alpha);
-    transpositionTable.put(boardHashCode, alpha - MINSCORE + 1);
     return alpha;
   }
 
@@ -220,6 +210,6 @@ public class BabbiniLibra implements CXPlayer {
   }
 
   public String playerName() {
-    return "Babbini-Libra";
+    return "niggamax";
   }
 }
