@@ -218,16 +218,8 @@ public class BabbiniLibra implements CXPlayer {
       // Both have potential, check who has the better potential
       return (int) Math.pow(10, countPlayer) - (int) Math.pow(10, countOpponent);
     } else {
-      // No one can win here, check positional advantage
-      int score = 0;
-      if (countPlayer > 0) {
-        score += Math.pow(2, countPlayer - 1);
-      }
-      if (countOpponent > 0) {
-        score -= Math.pow(2, countOpponent - 1);
-      }
-
-      return score;
+      // No one can win here
+      return 0;
     }
   }
 
