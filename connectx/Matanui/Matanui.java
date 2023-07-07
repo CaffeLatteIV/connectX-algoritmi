@@ -16,7 +16,7 @@
  *  GNU General Public License for more details; see <https://www.gnu.org/licenses/>.
  */
 
-package connectx.BabbiniLibra;
+package connectx.Matanui;
 
 import connectx.CXPlayer;
 import connectx.CXBoard;
@@ -33,7 +33,7 @@ import java.util.concurrent.TimeoutException;
  * randomly.
  * </p>
  */
-public class BabbiniLibra implements CXPlayer {
+public class Matanui implements CXPlayer {
   private CXGameState myWin;
   private CXGameState yourWin;
   private int TIMEOUT;
@@ -43,7 +43,7 @@ public class BabbiniLibra implements CXPlayer {
   int desiredDepth;
 
   /* Default empty constructor */
-  public BabbiniLibra() {
+  public Matanui() {
   }
 
   public void initPlayer(int M, int N, int K, boolean first, int timeout_in_secs) {
@@ -298,6 +298,6 @@ public class BabbiniLibra implements CXPlayer {
   }
 
   public String playerName() {
-    return "Babbini-Libra";
+    return "Matanui";
   }
 }
