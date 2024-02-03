@@ -1,6 +1,8 @@
 # CXGame 
+
 Bot that plays Connect X better than a human. 
 Algoritmi project, Unibo.
+
 ## Commands
 
 - Human vs Computer.  In the connectx/ directory run:
