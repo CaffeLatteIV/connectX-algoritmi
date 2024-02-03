@@ -1,46 +1,30 @@
-- Command-line compile.  In the connectx/ directory run::
-
-		javac -cp ".." *.java */*.java
-
-
-CXGame application:
+# CXGame 
+Bot that plays Connect X better than a human. 
+Algoritmi project, Unibo.
+## Commands
 
 - Human vs Computer.  In the connectx/ directory run:
 	
-		java -cp ".." connectx.CXGame 6 7 4 connectx.L0.L0
+		java -cp ".." connectx.CXGame 6 7 4 connectx.BabbiniLibra.BabbiniLibra
 
 
 - Computer vs Computer. In the connectx/ directory run:
 
-		java -cp ".." connectx.CXGame 6 7 4 connectx.L0.L0 connectx.L1.L1
+		java -cp ".." connectx.CXGame 6 7 4 connectx.L1.L1 connectx.BabbiniLibra.BabbiniLibra
 
 
 CXPlayerTester application:
 
 - Output score only:
 
-	java -cp ".." connectx.CXPlayerTester 6 7 4 connectx.L0.L0 connectx.L1.L1
+	java -cp ".." connectx.CXPlayerTester 6 7 4 connectx.L1.L1 connectx.BabbiniLibra.BabbiniLibra
 
 
 - Verbose output
 
-	java -cp ".." connectx.CXPlayerTester 6 7 4 connectx.L0.L0 connectx.L1.L1 -v
+	java -cp ".." connectx.CXPlayerTester 6 7 4 connectx.L1.L1 connectx.BabbiniLibra.BabbiniLibra -v
 
 
 - Verbose output and customized timeout (1 sec) and number of game repetitions (10 rounds)
 
-	java -cp ".." connectx.CXPlayerTester 6 7 4 connectx.L0.L0 connectx.L1.L1 -v -t 1 -r 10
-
-
-Player 1 (Babbini-Libra) -> [3,2]
-Player 2 (L1) -> [3,0]
-Player 1 (Babbini-Libra) -> [3,3]
-Player 2 (L1) -> [3,1]
-Player 1 (Babbini-Libra) -> [2,2]
-Player 2 (L1) -> [1,2]
-Player 1 (Babbini-Libra) -> [0,2]
-Player 2 (L1) -> [2,1]
-Player 1 (Babbini-Libra) -> [1,1]
-Player 2 (L1) -> [0,1]
-Player 1 (Babbini-Libra) -> [2,0]
-Player 2 (L1) -> [2,3]
+	java -cp ".." connectx.CXPlayerTester 6 7 4 connectx.L1.L1 connectx.BabbiniLibra.BabbiniLibra -v -t 1 -r 10
